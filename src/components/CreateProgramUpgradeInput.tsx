@@ -9,6 +9,8 @@ import {
   AccountMeta,
   Connection,
   PublicKey,
+  SYSVAR_CLOCK_PUBKEY,
+  SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
@@ -17,7 +19,7 @@ import { toast } from 'sonner';
 import { isPublickey } from '@/lib/isPublickey';
 import { SimplifiedProgramInfo } from '../hooks/useProgram';
 
-type ChangeUpgradeAuthorityInputProps = {
+type CreateProgramUpgradeInputProps = {
   programInfos: SimplifiedProgramInfo;
   multisigPda: string;
   transactionIndex: number;
@@ -26,17 +28,19 @@ type ChangeUpgradeAuthorityInputProps = {
   programId: string;
 };
 
-const ChangeUpgradeAuthorityInput = ({
+const CreateProgramUpgradeInput = ({
   programInfos,
   multisigPda,
   transactionIndex,
   rpcUrl,
   vaultIndex,
   programId,
-}: ChangeUpgradeAuthorityInputProps) => {
-  const [newAuthority, setNewAuthority] = useState('');
+}: CreateProgramUpgradeInputProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
+
+  const [bufferAddress, setBufferAddress] = useState('');
+  const [spillAddress, setSpillAddress] = useState('');
 
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const connection = new Connection(rpcUrl, { commitment: 'confirmed' });
@@ -54,7 +58,7 @@ const ChangeUpgradeAuthorityInput = ({
     }
 
     const upgradeData = Buffer.alloc(4);
-    upgradeData.writeInt32LE(4, 0);
+    upgradeData.writeInt32LE(3, 0);
 
     const keys: AccountMeta[] = [
       {
@@ -63,14 +67,34 @@ const ChangeUpgradeAuthorityInput = ({
         isSigner: false,
       },
       {
+        pubkey: new PublicKey(programInfos.programAddress),
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: new PublicKey(bufferAddress),
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: new PublicKey(spillAddress),
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: SYSVAR_RENT_PUBKEY,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        pubkey: SYSVAR_CLOCK_PUBKEY,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
         pubkey: vaultAddress,
         isWritable: false,
         isSigner: true,
-      },
-      {
-        pubkey: new PublicKey(newAuthority),
-        isWritable: false,
-        isSigner: false,
       },
     ];
 
@@ -138,9 +162,15 @@ const ChangeUpgradeAuthorityInput = ({
   return (
     <div>
       <Input
-        placeholder="New Program Authority"
+        placeholder="Buffer Address"
         type="text"
-        onChange={(e) => setNewAuthority(e.target.value)}
+        onChange={(e) => setBufferAddress(e.target.value)}
+        className="mb-3"
+      />
+      <Input
+        placeholder="Buffer Refund (Spill Address)"
+        type="text"
+        onChange={(e) => setSpillAddress(e.target.value)}
         className="mb-3"
       />
       <Button
@@ -152,12 +182,19 @@ const ChangeUpgradeAuthorityInput = ({
             error: (e) => `Failed to propose: ${e}`,
           })
         }
-        disabled={!isPublickey(programId) || !isPublickey(newAuthority)}
+        disabled={
+          !isPublickey(programId) ||
+          !isPublickey(bufferAddress) ||
+          !isPublickey(spillAddress) ||
+          !isPublickey(programInfos.programAddress) ||
+          !isPublickey(programInfos.authority) ||
+          !isPublickey(programInfos.programDataAddress)
+        }
       >
-        Change Authority
+        Create upgrade
       </Button>
     </div>
   );
 };
 
-export default ChangeUpgradeAuthorityInput;
+export default CreateProgramUpgradeInput;

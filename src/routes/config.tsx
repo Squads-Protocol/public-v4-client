@@ -1,6 +1,5 @@
 import AddMemberInput from '@/components/AddMemberInput';
 import ChangeThresholdInput from '@/components/ChangeThresholdInput';
-import ChangeUpgradeAuthorityInput from '@/components/ChangeUpgradeAuthorityInput';
 import RemoveMemberButton from '@/components/RemoveMemberButton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -11,7 +10,7 @@ import { renderPermissions } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const ConfigurationPage = () => {
-  const { rpcUrl, multisigAddress, vaultIndex, programId } = useMultisigData();
+  const { rpcUrl, multisigAddress, programId } = useMultisigData();
   const { data: multisigConfig } = useMultisig();
   return (
     <ErrorBoundary>
@@ -89,31 +88,6 @@ const ConfigurationPage = () => {
             </CardContent>
           </Card>
         </div>
-        {multisigConfig && (
-          <div className="pb-4">
-            <Card className="w-1/2">
-              <CardHeader>
-                <CardTitle>Change program Upgrade authority</CardTitle>
-                <CardDescription>
-                  Change the upgrade authority of one of your programs.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChangeUpgradeAuthorityInput
-                  multisigPda={multisigAddress!}
-                  rpcUrl={rpcUrl || clusterApiUrl('mainnet-beta')}
-                  transactionIndex={
-                    Number(multisigConfig ? multisigConfig.transactionIndex : 0) + 1
-                  }
-                  vaultIndex={vaultIndex}
-                  globalProgramId={
-                    programId ? programId.toBase58() : multisig.PROGRAM_ID.toBase58()
-                  }
-                />
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </div>
     </ErrorBoundary>
   );
