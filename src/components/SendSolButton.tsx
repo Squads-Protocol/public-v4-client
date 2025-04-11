@@ -71,7 +71,7 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
 
     const transferMessage = new TransactionMessage({
       instructions: [transferInstruction],
-      payerKey: wallet.publicKey,
+      payerKey: new PublicKey(vaultAddress),
       recentBlockhash: blockhash,
     });
 

@@ -3,6 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { useMultisigData } from './useMultisigData';
 import { useMultisigAddress } from './useMultisigAddress';
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 // load multisig
 export const useMultisig = () => {
@@ -50,9 +51,13 @@ export const useGetTokens = () => {
     queryFn: async () => {
       if (!multisigVault) return null;
       try {
-        return connection.getParsedTokenAccountsByOwner(multisigVault, {
-          programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
+        const classicTokens = await connection.getParsedTokenAccountsByOwner(multisigVault, {
+          programId: TOKEN_PROGRAM_ID,
         });
+        const t22Tokens = await connection.getParsedTokenAccountsByOwner(multisigVault, {
+          programId: TOKEN_2022_PROGRAM_ID,
+        });
+        return classicTokens.value.concat(t22Tokens.value);
       } catch (error) {
         console.error(error);
         return null;

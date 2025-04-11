@@ -81,7 +81,7 @@ const ChangeUpgradeAuthorityInput = ({
           keys,
         }),
       ],
-      payerKey: wallet.publicKey,
+      payerKey: new PublicKey(vaultAddress),
       recentBlockhash: blockhash,
     });
 

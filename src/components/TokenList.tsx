@@ -4,7 +4,6 @@ import SendTokens from './SendTokensButton';
 import SendSol from './SendSolButton';
 import { useMultisigData } from '~/hooks/useMultisigData';
 import { useBalance, useGetTokens } from '~/hooks/useServices';
-import {useAccess} from "../hooks/useAccess";
 
 type TokenListProps = {
   multisigPda: string;
@@ -34,10 +33,10 @@ export function TokenList({ multisigPda }: TokenListProps) {
                 <SendSol multisigPda={multisigPda} vaultIndex={vaultIndex} />
               </div>
             </div>
-            {tokens && tokens.value.length > 0 ? <hr className="mt-2" /> : null}
+            {tokens && tokens.length > 0 ? <hr className="mt-2" /> : null}
           </div>
           {tokens &&
-            tokens.value.map((token) => (
+            tokens.map((token) => (
               <div key={token.account.data.parsed.info.mint}>
                 <div className="flex items-center">
                   <div className="ml-4 space-y-1">

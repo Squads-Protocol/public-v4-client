@@ -12,6 +12,7 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -61,10 +62,15 @@ const SendTokens = ({
     if (!wallet.publicKey) {
       throw 'Wallet not connected';
     }
+
+    const mintAccountInfo = await connection.getAccountInfo(new PublicKey(mint));
+    const TOKEN_PROGRAM = mintAccountInfo?.owner || TOKEN_PROGRAM_ID;
+
     const recipientATA = getAssociatedTokenAddressSync(
       new PublicKey(mint),
       new PublicKey(recipient),
-      true
+      true,
+      TOKEN_PROGRAM
     );
 
     const vaultAddress = multisig
@@ -79,7 +85,8 @@ const SendTokens = ({
       new PublicKey(vaultAddress),
       recipientATA,
       new PublicKey(recipient),
-      new PublicKey(mint)
+      new PublicKey(mint),
+      TOKEN_PROGRAM
     );
 
     const transferInstruction = createTransferCheckedInstruction(
@@ -88,7 +95,9 @@ const SendTokens = ({
       recipientATA,
       new PublicKey(vaultAddress),
       parsedAmount * 10 ** decimals,
-      decimals
+      decimals,
+      [],
+      TOKEN_PROGRAM
     );
 
     const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
@@ -101,7 +110,7 @@ const SendTokens = ({
 
     const transferMessage = new TransactionMessage({
       instructions: [createRecipientATAInstruction, transferInstruction],
-      payerKey: wallet.publicKey,
+      payerKey: new PublicKey(vaultAddress),
       recentBlockhash: blockhash,
     });
 

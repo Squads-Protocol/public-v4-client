@@ -2,9 +2,7 @@ import ChangeUpgradeAuthorityInput from '@/components/ChangeUpgradeAuthorityInpu
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { clusterApiUrl, PublicKey } from '@solana/web3.js';
-import * as multisig from '@sqds/multisig';
-import { useMultisigData } from '@/hooks/useMultisigData';
+import { PublicKey } from '@solana/web3.js';
 import { useMultisig } from '@/hooks/useServices';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Suspense, useState } from 'react';
