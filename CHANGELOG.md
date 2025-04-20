@@ -5,6 +5,13 @@
 
 * **lockfile:** updated lockfile ([c8e1b4a](https://github.com/Squads-Protocol/public-v4-client/commit/c8e1b4a3d209b7c1c3cfc4d9e7edb8e187e22833))
 
+## [1.2.4](https://github.com/Squads-Protocol/public-v4-client/compare/v1.2.3...v1.2.4) (2025-04-11)
+
+
+### Bug Fixes
+
+* **main:** Permit T22 tokens && Fix rent payer issue in wrapped message ([#26](https://github.com/Squads-Protocol/public-v4-client/issues/26)) ([0b7ffb3](https://github.com/Squads-Protocol/public-v4-client/commit/0b7ffb3ea313b8641a3bf415db2cfad7759af753))
+
 ## [1.2.3](https://github.com/Squads-Protocol/public-v4-client/compare/v1.2.2...v1.2.3) (2025-03-13)
 
 
