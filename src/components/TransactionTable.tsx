@@ -43,7 +43,7 @@ export default function TransactionTable({
       {transactions.map((transaction, index) => {
         const stale =
           (multisigConfig &&
-            Number(multisigConfig.staleTransactionIndex) > Number(transaction.index)) ||
+            Number(multisigConfig.staleTransactionIndex) >= Number(transaction.index)) ||
           false;
         return (
           <TableRow key={index}>
