@@ -1,8 +1,8 @@
-import { Suspense } from 'react';
+import { Suspense, useState, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeftRight, 
-  Plus, 
+import {
+  ArrowLeftRight,
+  Plus,
   ExternalLink,
   ChevronLeft,
   ChevronRight,
@@ -10,7 +10,9 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  MoreHorizontal
+  MoreHorizontal,
+  Filter,
+  X,
 } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +43,7 @@ import CreateTransaction from '@/components/transactions/CreateTransactionButton
 import ApproveButton from '@/components/transactions/ApproveButton';
 import ExecuteButton from '@/components/transactions/ExecuteButton';
 import RejectButton from '@/components/transactions/RejectButton';
+import { TransactionDetailDrawer } from '@/components/transactions/TransactionDetailDrawer';
 import { useMultisig, useTransactions } from '@/hooks/useServices';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useExplorerUrl, useRpcUrl } from '@/hooks/useSettings';
@@ -49,6 +52,61 @@ import * as multisig from '@sqds/multisig';
 import { cn } from '~/lib/utils';
 
 const TRANSACTIONS_PER_PAGE = 10;
+
+type StatusFilter = 'all' | 'pending' | 'approved' | 'executed' | 'rejected' | 'stale';
+
+const filterOptions: { value: StatusFilter; label: string; icon: typeof Clock }[] = [
+  { value: 'all', label: 'All', icon: Filter },
+  { value: 'pending', label: 'Pending', icon: Clock },
+  { value: 'approved', label: 'Approved', icon: CheckCircle2 },
+  { value: 'executed', label: 'Executed', icon: CheckCircle2 },
+  { value: 'rejected', label: 'Rejected', icon: XCircle },
+  { value: 'stale', label: 'Stale', icon: AlertCircle },
+];
+
+function FilterBar({
+  activeFilter,
+  onFilterChange,
+}: {
+  activeFilter: StatusFilter;
+  onFilterChange: (filter: StatusFilter) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {filterOptions.map((option) => {
+        const Icon = option.icon;
+        const isActive = activeFilter === option.value;
+        return (
+          <Button
+            key={option.value}
+            variant={isActive ? 'default' : 'outline'}
+            size="sm"
+            className={cn(
+              'gap-1.5 transition-all',
+              isActive && 'shadow-md',
+              !isActive && 'hover:bg-muted'
+            )}
+            onClick={() => onFilterChange(option.value)}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {option.label}
+          </Button>
+        );
+      })}
+      {activeFilter !== 'all' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1 text-muted-foreground hover:text-foreground"
+          onClick={() => onFilterChange('all')}
+        >
+          <X className="h-3.5 w-3.5" />
+          Clear
+        </Button>
+      )}
+    </div>
+  );
+}
 
 function getStatusConfig(status: string, stale: boolean) {
   if (stale) {
@@ -140,6 +198,7 @@ function TransactionRow({
   stale,
   multisigPda,
   programId,
+  onClick,
 }: {
   index: number;
   transactionPda: string;
@@ -147,14 +206,15 @@ function TransactionRow({
   stale: boolean;
   multisigPda: string;
   programId: string;
+  onClick?: () => void;
 }) {
   const { rpcUrl } = useRpcUrl();
   const { explorerUrl } = useExplorerUrl();
-  
+
   const explorerLink = `${explorerUrl}/address/${transactionPda}?cluster=custom&customUrl=${encodeURIComponent(rpcUrl || '')}`;
 
   return (
-    <TableRow className="group">
+    <TableRow className="group cursor-pointer hover:bg-muted/50" onClick={onClick}>
       <TableCell>
         <span className="font-mono font-medium">#{index}</span>
       </TableCell>
@@ -163,7 +223,13 @@ function TransactionRow({
           <code className="rounded bg-muted px-2 py-1 font-mono text-xs">
             {transactionPda.slice(0, 8)}...{transactionPda.slice(-8)}
           </code>
-          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+            onClick={(e) => e.stopPropagation()}
+            asChild
+          >
             <a href={explorerLink} target="_blank" rel="noreferrer">
               <ExternalLink className="h-3 w-3" />
             </a>
@@ -173,7 +239,7 @@ function TransactionRow({
       <TableCell>
         <StatusBadge status={status} stale={stale} />
       </TableCell>
-      <TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()}>
         {!stale ? (
           <div className="flex items-center gap-1">
             <ApproveButton
@@ -240,14 +306,29 @@ function EmptyTransactions() {
   );
 }
 
+type TransactionData = {
+  index: number;
+  transactionPda: string;
+  status: string;
+  isStale: boolean;
+  proposal?: any;
+};
+
 export default function TransactionsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const pageParam = new URLSearchParams(location.search).get('page');
+  const filterParam = new URLSearchParams(location.search).get('filter') as StatusFilter | null;
   let page = pageParam ? parseInt(pageParam, 10) : 1;
   if (page < 1) page = 1;
 
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(filterParam || 'all');
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionData | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   const { multisigAddress, programId } = useMultisigData();
+  const { rpcUrl } = useRpcUrl();
+  const { explorerUrl } = useExplorerUrl();
   const { data: multisigConfig, isLoading: configLoading } = useMultisig();
 
   const totalTransactions = Number(multisigConfig?.transactionIndex || 0);
@@ -257,14 +338,49 @@ export default function TransactionsPage() {
   const endIndex = Math.max(startIndex - TRANSACTIONS_PER_PAGE + 1, 1);
 
   const { data: latestTransactions, isLoading: txLoading } = useTransactions(startIndex, endIndex);
+  const staleIndex = multisigConfig ? Number(multisigConfig.staleTransactionIndex) : 0;
 
-  const transactions = (latestTransactions || []).map((transaction) => ({
-    ...transaction,
-    transactionPda: transaction.transactionPda[0].toBase58(),
-  }));
+  const transactions = useMemo(() => {
+    const mapped = (latestTransactions || []).map((transaction) => ({
+      ...transaction,
+      transactionPda: transaction.transactionPda[0].toBase58(),
+      isStale: staleIndex > Number(transaction.index),
+    }));
+
+    if (statusFilter === 'all') return mapped;
+
+    return mapped.filter((tx) => {
+      const status = tx.proposal?.status.__kind || 'None';
+      switch (statusFilter) {
+        case 'pending':
+          return !tx.isStale && (status === 'None' || status === 'Active');
+        case 'approved':
+          return status === 'Approved';
+        case 'executed':
+          return status === 'Executed';
+        case 'rejected':
+          return status === 'Rejected' || status === 'Cancelled';
+        case 'stale':
+          return tx.isStale;
+        default:
+          return true;
+      }
+    });
+  }, [latestTransactions, statusFilter, staleIndex]);
+
+  const handleFilterChange = (filter: StatusFilter) => {
+    setStatusFilter(filter);
+    const params = new URLSearchParams(location.search);
+    if (filter === 'all') {
+      params.delete('filter');
+    } else {
+      params.set('filter', filter);
+    }
+    params.set('page', '1');
+    navigate(`/transactions?${params.toString()}`);
+  };
 
   const isLoading = configLoading || txLoading;
-  const staleIndex = multisigConfig ? Number(multisigConfig.staleTransactionIndex) : 0;
 
   return (
     <ErrorBoundary>
@@ -282,7 +398,7 @@ export default function TransactionsPage() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="card-hover animate-in" style={{ animationDelay: '0s', opacity: 0 }}>
+          <Card className="card-hover animate-in stagger-1">
             <CardContent className="flex items-center gap-4 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                 <ArrowLeftRight className="h-5 w-5 text-primary" />
@@ -293,7 +409,7 @@ export default function TransactionsPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-hover animate-in" style={{ animationDelay: '0.05s', opacity: 0 }}>
+          <Card className="card-hover animate-in stagger-2">
             <CardContent className="flex items-center gap-4 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -304,7 +420,7 @@ export default function TransactionsPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-hover animate-in" style={{ animationDelay: '0.1s', opacity: 0 }}>
+          <Card className="card-hover animate-in stagger-3">
             <CardContent className="flex items-center gap-4 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
                 <Clock className="h-5 w-5 text-blue-500" />
@@ -317,13 +433,29 @@ export default function TransactionsPage() {
           </Card>
         </div>
 
+        {/* Filter Bar */}
+        <div className="animate-in stagger-4">
+          <FilterBar activeFilter={statusFilter} onFilterChange={handleFilterChange} />
+        </div>
+
         {/* Transactions Table */}
-        <Card className="animate-in" style={{ animationDelay: '0.15s', opacity: 0 }}>
+        <Card className="animate-in stagger-5">
           <CardHeader className="border-b border-border/50">
-            <CardTitle>Transaction History</CardTitle>
-            <CardDescription>
-              View and manage all multisig transactions
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Transaction History</CardTitle>
+                <CardDescription>
+                  {statusFilter === 'all'
+                    ? 'View and manage all multisig transactions'
+                    : `Showing ${statusFilter} transactions`}
+                </CardDescription>
+              </div>
+              {statusFilter !== 'all' && (
+                <Badge variant="secondary" className="ml-2">
+                  {transactions.length} result{transactions.length !== 1 ? 's' : ''}
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
@@ -331,7 +463,25 @@ export default function TransactionsPage() {
                 <TransactionsTableSkeleton />
               </div>
             ) : transactions.length === 0 ? (
-              <EmptyTransactions />
+              statusFilter === 'all' ? (
+                <EmptyTransactions />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Filter className="h-10 w-10 text-muted-foreground/50" />
+                  <p className="mt-4 text-sm font-medium">No {statusFilter} transactions</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Try changing your filter or check back later
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => handleFilterChange('all')}
+                  >
+                    Clear filter
+                  </Button>
+                </div>
+              )
             ) : (
               <>
                 <Table>
@@ -344,20 +494,27 @@ export default function TransactionsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {transactions.map((tx) => {
-                      const isStale = staleIndex > Number(tx.index);
-                      return (
-                        <TransactionRow
-                          key={tx.transactionPda}
-                          index={Number(tx.index)}
-                          transactionPda={tx.transactionPda}
-                          status={tx.proposal?.status.__kind || 'None'}
-                          stale={isStale}
-                          multisigPda={multisigAddress!}
-                          programId={programId?.toBase58() || multisig.PROGRAM_ID.toBase58()}
-                        />
-                      );
-                    })}
+                    {transactions.map((tx) => (
+                      <TransactionRow
+                        key={tx.transactionPda}
+                        index={Number(tx.index)}
+                        transactionPda={tx.transactionPda}
+                        status={tx.proposal?.status.__kind || 'None'}
+                        stale={tx.isStale}
+                        multisigPda={multisigAddress!}
+                        programId={programId?.toBase58() || multisig.PROGRAM_ID.toBase58()}
+                        onClick={() => {
+                          setSelectedTransaction({
+                            index: Number(tx.index),
+                            transactionPda: tx.transactionPda,
+                            status: tx.proposal?.status.__kind || 'None',
+                            isStale: tx.isStale,
+                            proposal: tx.proposal,
+                          });
+                          setDrawerOpen(true);
+                        }}
+                      />
+                    ))}
                   </TableBody>
                 </Table>
 
@@ -374,7 +531,11 @@ export default function TransactionsPage() {
                             variant="outline"
                             size="sm"
                             disabled={page <= 1}
-                            onClick={() => navigate(`/transactions?page=${page - 1}`)}
+                            onClick={() => {
+                              const params = new URLSearchParams(location.search);
+                              params.set('page', String(page - 1));
+                              navigate(`/transactions?${params.toString()}`);
+                            }}
                           >
                             <ChevronLeft className="mr-1 h-4 w-4" />
                             Previous
@@ -385,7 +546,11 @@ export default function TransactionsPage() {
                             variant="outline"
                             size="sm"
                             disabled={page >= totalPages}
-                            onClick={() => navigate(`/transactions?page=${page + 1}`)}
+                            onClick={() => {
+                              const params = new URLSearchParams(location.search);
+                              params.set('page', String(page + 1));
+                              navigate(`/transactions?${params.toString()}`);
+                            }}
                           >
                             Next
                             <ChevronRight className="ml-1 h-4 w-4" />
@@ -399,6 +564,17 @@ export default function TransactionsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Transaction Detail Drawer */}
+        <TransactionDetailDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          transaction={selectedTransaction}
+          multisigPda={multisigAddress || ''}
+          programId={programId?.toBase58() || multisig.PROGRAM_ID.toBase58()}
+          explorerUrl={explorerUrl}
+          rpcUrl={rpcUrl || ''}
+        />
       </div>
     </ErrorBoundary>
   );

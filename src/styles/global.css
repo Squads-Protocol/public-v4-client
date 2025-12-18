@@ -171,14 +171,24 @@
     }
     
     .gradient-mesh {
-        background: 
+        background:
             radial-gradient(at 40% 20%, hsla(263,70%,50%,0.15) 0px, transparent 50%),
             radial-gradient(at 80% 0%, hsla(142,71%,45%,0.1) 0px, transparent 50%),
             radial-gradient(at 0% 50%, hsla(263,70%,50%,0.1) 0px, transparent 50%),
             radial-gradient(at 80% 50%, hsla(38,92%,50%,0.08) 0px, transparent 50%),
             radial-gradient(at 0% 100%, hsla(263,70%,50%,0.12) 0px, transparent 50%);
     }
-    
+
+    /* Light theme: subtle gradient mesh */
+    .light .gradient-mesh {
+        background:
+            radial-gradient(at 40% 20%, hsla(263,70%,50%,0.06) 0px, transparent 50%),
+            radial-gradient(at 80% 0%, hsla(142,71%,45%,0.04) 0px, transparent 50%),
+            radial-gradient(at 0% 50%, hsla(263,70%,50%,0.04) 0px, transparent 50%),
+            radial-gradient(at 80% 50%, hsla(38,92%,50%,0.03) 0px, transparent 50%),
+            radial-gradient(at 0% 100%, hsla(263,70%,50%,0.05) 0px, transparent 50%);
+    }
+
     /* Gradient text */
     .gradient-text {
         @apply bg-gradient-to-r from-primary via-purple-400 to-primary bg-clip-text text-transparent;
@@ -198,26 +208,71 @@
         @apply transition-all duration-300 hover:border-primary/30;
         box-shadow: 0 0 0 1px hsl(var(--border) / 0.5);
     }
-    
+
     .card-hover:hover {
-        box-shadow: 
+        box-shadow:
             0 0 0 1px hsl(var(--primary) / 0.2),
             0 8px 24px hsl(var(--primary) / 0.08),
             inset 0 1px 0 hsl(var(--foreground) / 0.03);
     }
-    
+
+    .light .card-hover:hover {
+        box-shadow:
+            0 0 0 1px hsl(var(--primary) / 0.15),
+            0 4px 16px hsl(var(--primary) / 0.06);
+    }
+
     .card-interactive {
         @apply transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30;
         box-shadow: 0 0 0 1px hsl(var(--border) / 0.5);
     }
-    
+
     .card-interactive:hover {
-        box-shadow: 
+        box-shadow:
             0 0 0 1px hsl(var(--primary) / 0.3),
             0 12px 32px hsl(var(--primary) / 0.12),
             inset 0 1px 0 hsl(var(--foreground) / 0.05);
     }
-    
+
+    .light .card-interactive:hover {
+        box-shadow:
+            0 0 0 1px hsl(var(--primary) / 0.2),
+            0 8px 24px hsl(var(--primary) / 0.08);
+    }
+
+    /* Active nav indicator */
+    .nav-active-indicator {
+        position: relative;
+    }
+
+    .nav-active-indicator::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 60%;
+        background: linear-gradient(180deg, hsl(var(--primary)), hsl(280 70% 55%));
+        border-radius: 0 2px 2px 0;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .nav-active-indicator[data-active="true"]::before {
+        opacity: 1;
+    }
+
+    /* Light theme sidebar refinements */
+    .light [data-sidebar] {
+        box-shadow: inset -1px 0 0 hsl(var(--border) / 0.5);
+    }
+
+    /* Subtle text shadow for light theme headers */
+    .light .text-shadow-subtle {
+        text-shadow: 0 1px 2px hsl(var(--foreground) / 0.05);
+    }
+
     /* Subtle animations */
     .animate-glow {
         animation: glow 2s ease-in-out infinite alternate;
@@ -256,9 +311,25 @@
         }
     }
     
-    /* Focus ring */
+    /* Focus ring - refined with glow */
     .focus-ring {
         @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    }
+
+    /* Premium focus ring with glow */
+    .focus-ring-glow:focus-visible {
+        outline: none;
+        box-shadow:
+            0 0 0 2px hsl(var(--background)),
+            0 0 0 4px hsl(var(--ring)),
+            0 0 12px hsl(var(--ring) / 0.3);
+    }
+
+    .light .focus-ring-glow:focus-visible {
+        box-shadow:
+            0 0 0 2px hsl(var(--background)),
+            0 0 0 4px hsl(var(--ring)),
+            0 0 8px hsl(var(--ring) / 0.2);
     }
     
     /* Number displays - monospace for values */
@@ -394,15 +465,16 @@
     
     /* Entrance animations */
     .animate-in {
+        opacity: 0;
         animation: animate-in 0.4s ease-out forwards;
     }
-    
+
     .animate-in-delayed {
         opacity: 0;
         animation: animate-in 0.4s ease-out forwards;
         animation-delay: 0.1s;
     }
-    
+
     @keyframes animate-in {
         from {
             opacity: 0;
@@ -413,12 +485,14 @@
             transform: translateY(0);
         }
     }
-    
-    /* Staggered entrance for lists */
+
+    /* Staggered entrance for lists - combine with animate-in */
     .stagger-1 { animation-delay: 0.05s; }
     .stagger-2 { animation-delay: 0.1s; }
     .stagger-3 { animation-delay: 0.15s; }
     .stagger-4 { animation-delay: 0.2s; }
+    .stagger-5 { animation-delay: 0.25s; }
+    .stagger-6 { animation-delay: 0.3s; }
     
     /* Premium shimmer loading */
     .shimmer-loading {

@@ -1,9 +1,9 @@
-import { 
-  Home, 
-  ArrowLeftRight, 
-  Users, 
-  Box, 
-  Settings, 
+import {
+  Home,
+  ArrowLeftRight,
+  Users,
+  Box,
+  Settings,
   Github,
   ExternalLink,
   ChevronRight,
@@ -11,7 +11,9 @@ import {
   LogOut,
   Copy,
   Check,
-  Shuffle
+  Shuffle,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -43,6 +45,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
   TooltipContent,
@@ -50,6 +53,8 @@ import {
 } from '@/components/ui/tooltip';
 import { useMultisigAddress } from '@/hooks/useMultisigAddress';
 import { useMultisigData } from '@/hooks/useMultisigData';
+import { useTheme } from '@/hooks/useTheme';
+import { useMultisig } from '@/hooks/useServices';
 import { cn } from '~/lib/utils';
 
 const navItems = [
@@ -216,6 +221,56 @@ function WalletSection() {
   );
 }
 
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const { state } = useSidebar();
+  const isCollapsed = state === 'collapsed';
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  if (isCollapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="w-full justify-start gap-2"
+      onClick={toggleTheme}
+    >
+      {theme === 'dark' ? (
+        <>
+          <Sun className="h-4 w-4" />
+          <span>Light mode</span>
+        </>
+      ) : (
+        <>
+          <Moon className="h-4 w-4" />
+          <span>Dark mode</span>
+        </>
+      )}
+    </Button>
+  );
+}
+
 function SquadSelector() {
   const { multisigAddress } = useMultisigData();
   const { setMultisigAddress } = useMultisigAddress();
@@ -270,11 +325,25 @@ function SquadSelector() {
   );
 }
 
+function usePendingCount() {
+  try {
+    const { data: multisigConfig } = useMultisig();
+    if (!multisigConfig) return 0;
+    const totalTx = Number(multisigConfig.transactionIndex);
+    const staleTx = Number(multisigConfig.staleTransactionIndex);
+    // Pending = transactions that are not stale yet
+    return Math.max(0, totalTx - staleTx);
+  } catch {
+    return 0;
+  }
+}
+
 export function AppSidebar() {
   const location = useLocation();
   const path = location.pathname;
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
+  const pendingCount = usePendingCount();
 
   const isActive = (route: string) => {
     if (route === '/') return path === '/';
@@ -289,11 +358,11 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="Squads">
               <Link to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/10">
-                  <img 
-                    src="/logo.png" 
-                    className="size-5 object-contain brightness-0 invert" 
-                    alt="Squads" 
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-primary/5">
+                  <img
+                    src="/logo.png"
+                    className="size-5 object-contain brightness-0 dark:invert"
+                    alt="Squads"
                   />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
@@ -320,16 +389,32 @@ export function AppSidebar() {
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.route);
+                const showBadge = item.route === '/transactions/' && pendingCount > 0;
                 return (
                   <SidebarMenuItem key={item.route}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       isActive={active}
-                      tooltip={item.name}
+                      tooltip={showBadge ? `${item.name} (${pendingCount} pending)` : item.name}
+                      className="nav-active-indicator"
+                      data-active={active}
                     >
-                      <Link to={item.route}>
+                      <Link to={item.route} className="relative">
                         <Icon className="shrink-0" />
                         <span>{item.name}</span>
+                        {showBadge && !isCollapsed && (
+                          <Badge
+                            variant="default"
+                            className="ml-auto h-5 min-w-5 justify-center rounded-full px-1.5 text-[10px] font-medium"
+                          >
+                            {pendingCount > 99 ? '99+' : pendingCount}
+                          </Badge>
+                        )}
+                        {showBadge && isCollapsed && (
+                          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-medium text-primary-foreground">
+                            {pendingCount > 9 ? '9+' : pendingCount}
+                          </span>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -364,11 +449,12 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer with Wallet */}
+      {/* Footer with Theme Toggle and Wallet */}
       <SidebarFooter className={cn(
-        "border-t border-sidebar-border",
-        isCollapsed && "flex items-center justify-center"
+        "border-t border-sidebar-border space-y-2",
+        isCollapsed && "flex flex-col items-center justify-center"
       )}>
+        <ThemeToggle />
         <WalletSection />
       </SidebarFooter>
 
@@ -376,4 +462,5 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
 

@@ -48,9 +48,8 @@ function StatCard({
   index?: number;
 }) {
   return (
-    <Card 
-      className={cn("stat-card card-hover animate-in", className)}
-      style={{ animationDelay: `${index * 0.05}s`, opacity: 0 }}
+    <Card
+      className={cn("stat-card card-hover animate-in", `stagger-${index + 1}`, className)}
     >
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
@@ -287,14 +286,14 @@ export default function Overview() {
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <div className="animate-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
+          <div className="animate-in stagger-5">
             <VaultCard />
           </div>
-          <div className="animate-in" style={{ animationDelay: '0.25s', opacity: 0 }}>
+          <div className="animate-in stagger-6">
             <ThresholdCard />
           </div>
         </div>
-        <div className="animate-in" style={{ animationDelay: '0.3s', opacity: 0 }}>
+        <div className="animate-in stagger-5">
           <QuickActions />
         </div>
       </div>

@@ -5,6 +5,9 @@ import { Toaster } from './components/ui/sonner';
 import { Spinner } from './components/ui/spinner';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from './components/ui/sidebar';
 import { AppSidebar } from './components/layout/AppSidebar';
+import { AppBreadcrumb } from './components/layout/AppBreadcrumb';
+import { CommandPalette } from './components/layout/CommandPalette';
+import { ThemeProvider } from './hooks/useTheme';
 
 import HomePage from './routes/_index';
 import ConfigPage from './routes/config';
@@ -33,56 +36,66 @@ const PageHeader = ({ children }: { children?: React.ReactNode }) => (
   <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border/50 bg-background/80 px-4 backdrop-blur-xl">
     <SidebarTrigger className="-ml-1" />
     <Separator orientation="vertical" className="mr-2 h-4" />
+    <AppBreadcrumb />
     {children}
+    <div className="ml-auto">
+      <kbd className="pointer-events-none hidden h-6 select-none items-center gap-1 rounded border border-border/50 bg-muted px-2 font-mono text-[10px] font-medium text-muted-foreground opacity-100 sm:flex">
+        <span className="text-xs">⌘</span>K
+      </kbd>
+    </div>
   </header>
 );
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Wallet>
-        <HashRouter>
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset className="gradient-mesh">
-              <PageHeader />
-              <main className="flex-1 overflow-auto">
-                <div className="mx-auto max-w-6xl space-y-6 p-6">
-                  <ErrorBoundary>
-                    <Suspense fallback={<LoadingFallback />}>
-                      <Routes>
-                        <Route index path="/" element={<HomePage />} />
-                        <Route path="/config" element={<ConfigPage />} />
-                        <Route path="/create" element={<CreatePage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                        <Route path="/transactions" element={<TransactionsPage />} />
-                        <Route path="/programs" element={<ProgramsPage />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
-                  </ErrorBoundary>
-                </div>
-              </main>
-            </SidebarInset>
-          </SidebarProvider>
+    <ThemeProvider defaultTheme="dark" storageKey="squads-ui-theme">
+      <QueryClientProvider client={queryClient}>
+        <Wallet>
+          <HashRouter>
+            <SidebarProvider>
+              <AppSidebar />
+              <SidebarInset className="gradient-mesh">
+                <PageHeader />
+                <main className="flex-1 overflow-auto">
+                  <div className="mx-auto max-w-6xl space-y-6 p-6">
+                    <ErrorBoundary>
+                      <Suspense fallback={<LoadingFallback />}>
+                        <Routes>
+                          <Route index path="/" element={<HomePage />} />
+                          <Route path="/config" element={<ConfigPage />} />
+                          <Route path="/create" element={<CreatePage />} />
+                          <Route path="/settings" element={<SettingsPage />} />
+                          <Route path="/transactions" element={<TransactionsPage />} />
+                          <Route path="/programs" element={<ProgramsPage />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Suspense>
+                    </ErrorBoundary>
+                  </div>
+                </main>
+              </SidebarInset>
+            </SidebarProvider>
 
-          <Toaster
-            position="bottom-right"
-            expand
-            richColors
-            closeButton
-            visibleToasts={4}
-            toastOptions={{
-              classNames: {
-                toast: 'bg-card border-border',
-                title: 'text-foreground',
-                description: 'text-muted-foreground',
-              },
-            }}
-          />
-        </HashRouter>
-      </Wallet>
-    </QueryClientProvider>
+            <CommandPalette />
+
+            <Toaster
+              position="bottom-right"
+              expand
+              richColors
+              closeButton
+              visibleToasts={4}
+              toastOptions={{
+                classNames: {
+                  toast: 'bg-card border-border',
+                  title: 'text-foreground',
+                  description: 'text-muted-foreground',
+                },
+              }}
+            />
+          </HashRouter>
+        </Wallet>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 
