@@ -21,8 +21,7 @@ The following steps will guide you to build, verify, and host the application.
 ### 1. **Build the Web App**
 
 #### Prerequisites:
-- [Node.js v20+](https://nodejs.org/)
-- [Yarn](https://yarnpkg.com/)
+- [Bun](https://bun.sh/) (v1.0+)
 
 #### Steps:
 1. Clone the repository:
@@ -33,12 +32,12 @@ The following steps will guide you to build, verify, and host the application.
 
 2. Install dependencies:
    ```bash
-   yarn install --frozen-lockfile
+   bun install
    ```
 
 3. Build the application:
    ```bash
-   yarn build
+   bun run build
    ```
    A `dist/` directory will be created containing the static files.
 

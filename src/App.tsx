@@ -1,10 +1,10 @@
 import React, { Suspense } from 'react';
-import { Wallet } from './components/Wallet';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { QueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CheckSquare } from 'lucide-react';
+import { Wallet } from './components/wallet/Wallet';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
-import TabNav from './components/TabNav';
+import { Spinner } from './components/ui/spinner';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from './components/ui/sidebar';
+import { AppSidebar } from './components/layout/AppSidebar';
 
 import HomePage from './routes/_index';
 import ConfigPage from './routes/config';
@@ -14,44 +14,70 @@ import TransactionsPage from './routes/transactions';
 import ProgramsPage from './routes/programs';
 import { Routes, Route, HashRouter } from 'react-router-dom';
 
-import './styles/global.css'; // ✅ Load Tailwind styles
-import { ErrorBoundary } from './components/ErrorBoundary';
+import './styles/global.css';
+import { ErrorBoundary } from './components/layout/ErrorBoundary';
+import { Separator } from './components/ui/separator';
+
+const queryClient = new QueryClient();
+
+const LoadingFallback = () => (
+  <div className="flex h-full min-h-[400px] items-center justify-center">
+    <div className="flex flex-col items-center gap-4">
+      <Spinner className="h-8 w-8 text-primary" />
+      <p className="text-sm text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
+
+const PageHeader = ({ children }: { children?: React.ReactNode }) => (
+  <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border/50 bg-background/80 px-4 backdrop-blur-xl">
+    <SidebarTrigger className="-ml-1" />
+    <Separator orientation="vertical" className="mr-2 h-4" />
+    {children}
+  </header>
+);
 
 const App = () => {
-  const queryClient = new QueryClient();
-
-  // @ts-ignore
   return (
     <QueryClientProvider client={queryClient}>
       <Wallet>
         <HashRouter>
-          <div className="flex h-screen min-w-full flex-col bg-white md:flex-row">
-            <Suspense>
-              <TabNav />
-            </Suspense>
-            <div className="mt-1 space-y-2 p-3 pb-24 pt-4 md:ml-auto md:w-9/12 md:space-y-4 md:p-8 md:pt-6">
-              <ErrorBoundary>
-                <Suspense fallback={<p>Loading...</p>}>
-                  <Routes>
-                    <Route index path="/" element={<HomePage />} />
-                    <Route path="/config" element={<ConfigPage />} />
-                    <Route path="/create" element={<CreatePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/transactions" element={<TransactionsPage />} />
-                    <Route path="/programs" element={<ProgramsPage />} />
-                    <Route path="*" element={<p>404 - Not Found</p>} /> {/* Catch-all route */}
-                  </Routes>
-                </Suspense>
-              </ErrorBoundary>
-            </div>
-          </div>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset className="gradient-mesh">
+              <PageHeader />
+              <main className="flex-1 overflow-auto">
+                <div className="mx-auto max-w-6xl space-y-6 p-6">
+                  <ErrorBoundary>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Routes>
+                        <Route index path="/" element={<HomePage />} />
+                        <Route path="/config" element={<ConfigPage />} />
+                        <Route path="/create" element={<CreatePage />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/transactions" element={<TransactionsPage />} />
+                        <Route path="/programs" element={<ProgramsPage />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </ErrorBoundary>
+                </div>
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
 
           <Toaster
+            position="bottom-right"
             expand
-            visibleToasts={3}
-            icons={{
-              error: <AlertTriangle className="h-4 w-4 text-red-600" />,
-              success: <CheckSquare className="h-4 w-4 text-green-600" />,
+            richColors
+            closeButton
+            visibleToasts={4}
+            toastOptions={{
+              classNames: {
+                toast: 'bg-card border-border',
+                title: 'text-foreground',
+                description: 'text-muted-foreground',
+              },
             }}
           />
         </HashRouter>
@@ -59,5 +85,15 @@ const App = () => {
     </QueryClientProvider>
   );
 };
+
+const NotFound = () => (
+  <div className="flex flex-col items-center justify-center py-20">
+    <div className="rounded-full bg-muted p-6">
+      <span className="text-4xl">🔍</span>
+    </div>
+    <h1 className="mt-6 text-4xl font-bold">404</h1>
+    <p className="mt-2 text-muted-foreground">Page not found</p>
+  </div>
+);
 
 export default App;
