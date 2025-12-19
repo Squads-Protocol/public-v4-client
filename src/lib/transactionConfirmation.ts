@@ -1,4 +1,4 @@
-import { Connection, RpcResponseAndContext, SignatureStatus } from '@solana/web3.js';
+import type { Connection, RpcResponseAndContext, SignatureStatus } from '@solana/web3.js';
 
 export async function waitForConfirmation(
   connection: Connection, // Adjust type based on your connection object

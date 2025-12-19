@@ -1,9 +1,9 @@
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { type Connection, PublicKey } from '@solana/web3.js';
 import * as multisig from '@sqds/multisig';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Connection, PublicKey } from '@solana/web3.js';
-import { useMultisigData } from './useMultisigData';
 import { useMultisigAddress } from './useMultisigAddress';
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { useMultisigData } from './useMultisigData';
 
 // load multisig
 export const useMultisig = () => {
@@ -16,7 +16,7 @@ export const useMultisig = () => {
       if (!multisigAddress) return null;
       try {
         const multisigPubkey = new PublicKey(multisigAddress);
-        // @ts-ignore
+        // @ts-expect-error
         return multisig.accounts.Multisig.fromAccountAddress(connection, multisigPubkey);
       } catch (error) {
         console.error(error);
@@ -86,9 +86,9 @@ async function fetchTransactionData(
 
   let proposal;
   try {
-    // @ts-ignore
+    // @ts-expect-error
     proposal = await multisig.accounts.Proposal.fromAccountAddress(connection, proposalPda[0]);
-  } catch (error) {
+  } catch (_error) {
     proposal = null;
   }
 
@@ -116,7 +116,7 @@ export const useTransactions = (startIndex: number, endIndex: number) => {
         }
 
         return results;
-      } catch (error) {
+      } catch (_error) {
         return null;
       }
     },

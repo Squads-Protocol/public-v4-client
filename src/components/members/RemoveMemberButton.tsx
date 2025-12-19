@@ -1,13 +1,13 @@
-import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
-import { Button } from '../ui/button';
-import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAccess } from '@/hooks/useAccess';
-import { waitForConfirmation } from '@/lib/transactionConfirmation';
-import { useQueryClient } from '@tanstack/react-query';
 import { useMultisigData } from '@/hooks/useMultisigData';
+import { waitForConfirmation } from '@/lib/transactionConfirmation';
+import { Button } from '../ui/button';
 
 type RemoveMemberButtonProps = {
   multisigPda: string;
@@ -34,7 +34,7 @@ const RemoveMemberButton = ({
       walletModal.setVisible(true);
       return;
     }
-    let bigIntTransactionIndex = BigInt(transactionIndex);
+    const bigIntTransactionIndex = BigInt(transactionIndex);
 
     const removeMemberIx = multisig.instructions.configTransactionCreate({
       multisigPda: new PublicKey(multisigPda),

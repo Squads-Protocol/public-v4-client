@@ -1,8 +1,8 @@
 'use client';
+import type { WalletContextState } from '@solana/wallet-adapter-react';
+import { type Connection, VersionedTransaction } from '@solana/web3.js';
 import { toast } from 'sonner';
 import { decodeAndDeserialize } from './decodeAndDeserialize';
-import { Connection, VersionedTransaction } from '@solana/web3.js';
-import { WalletContextState } from '@solana/wallet-adapter-react';
 import { getAccountsForSimulation } from './getAccountsForSimulation';
 
 export const simulateEncodedTransaction = async (

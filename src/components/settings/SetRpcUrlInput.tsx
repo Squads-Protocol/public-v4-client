@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import { useRpcUrl } from '~/hooks/useSettings'; // Now using React Query!
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 const SetRpcUrlInput = ({ onUpdate }: { onUpdate?: () => void }) => {
   const { rpcUrl: storedRpcUrl, setRpcUrl } = useRpcUrl(); // Use React Query

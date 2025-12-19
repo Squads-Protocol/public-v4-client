@@ -1,6 +1,6 @@
 // to assist in the search based off of vault including relevant discriminators
 // ie, we can find the multisig config address by identifying where its positioned if given a vault address
-import { PublicKey, TransactionInstruction } from '@solana/web3.js';
+import type { PublicKey, TransactionInstruction } from '@solana/web3.js';
 
 const batchExecuteTransactionInstructionDiscriminator = [172, 44, 179, 152, 21, 127, 234, 180];
 const spendingLimitUseInstructionDiscriminator = [16, 57, 130, 127, 193, 20, 155, 134];

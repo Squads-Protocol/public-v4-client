@@ -1,11 +1,7 @@
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import * as multisig from '@sqds/multisig';
 import {
-  AccountMeta,
+  type AccountMeta,
   PublicKey,
   SYSVAR_CLOCK_PUBKEY,
   SYSVAR_RENT_PUBKEY,
@@ -13,12 +9,16 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { toast } from 'sonner';
-import { isPublickey } from '@/lib/isPublickey';
-import { SimplifiedProgramInfo } from '@/hooks/useProgram';
-import { useMultisigData } from '@/hooks/useMultisigData';
+import * as multisig from '@sqds/multisig';
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useMultisigData } from '@/hooks/useMultisigData';
+import type { SimplifiedProgramInfo } from '@/hooks/useProgram';
+import { isPublickey } from '@/lib/isPublickey';
 import { waitForConfirmation } from '@/lib/transactionConfirmation';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 type CreateProgramUpgradeInputProps = {
   programInfos: SimplifiedProgramInfo;
@@ -114,7 +114,7 @@ const CreateProgramUpgradeInput = ({
       multisigPda,
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      // @ts-ignore
+      // @ts-expect-error
       transactionMessage,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],

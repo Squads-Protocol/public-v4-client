@@ -1,17 +1,20 @@
-import { useState } from 'react';
-import { Search, Loader2, Check, Wallet } from 'lucide-react';
 import {
   AddressLookupTableAccount,
-  AddressLookupTableAccountArgs,
-  ConfirmedSignatureInfo,
-  Connection,
-  DecompileArgs,
+  type AddressLookupTableAccountArgs,
+  type ConfirmedSignatureInfo,
+  type Connection,
+  type DecompileArgs,
   PublicKey,
   TransactionMessage,
-  VersionedTransactionResponse,
+  type VersionedTransactionResponse,
 } from '@solana/web3.js';
+import { Check, Loader2, Search, Wallet } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
-
+import { useMultisigAddress } from '@/hooks/useMultisigAddress';
+import { useMultisigData } from '@/hooks/useMultisigData';
+import { identifyInstructionByDiscriminator } from '@/lib/discriminators';
+import { Button } from '../ui/button';
 import {
   Dialog,
   DialogContent,
@@ -20,14 +23,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
-import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
-import { ScrollArea } from '../ui/scroll-area';
 import { Progress } from '../ui/progress';
-import { identifyInstructionByDiscriminator } from '@/lib/discriminators';
-import { useMultisigAddress } from '@/hooks/useMultisigAddress';
-import { useMultisigData } from '@/hooks/useMultisigData';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface MultisigLookupProps {
   onUpdate: () => void;
@@ -51,7 +49,7 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
     setForceCancel(false);
     setProgress(0);
     setFoundMultisigs(new Set());
-    
+
     try {
       const vaultPubkey = new PublicKey(vaultAddress);
       setStatusMessage('Fetching signatures...');
@@ -60,7 +58,7 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
         vaultPubkey,
         { limit: 300 }
       );
-      
+
       if (signatures.length === 0) {
         setStatusMessage('No signatures found for this address');
         setSearching(false);
@@ -155,12 +153,14 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
               onChange={(e) => setVaultAddress(e.target.value.trim())}
               disabled={searching}
             />
-            <Button 
-              onClick={() => toast.promise(search, {
-                loading: 'Searching...',
-                success: 'Search complete',
-                error: (e) => `Search failed: ${e}`,
-              })}
+            <Button
+              onClick={() =>
+                toast.promise(search, {
+                  loading: 'Searching...',
+                  success: 'Search complete',
+                  error: (e) => `Search failed: ${e}`,
+                })
+              }
               disabled={searching || !vaultAddress}
               className="shrink-0"
             >
@@ -175,9 +175,7 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
           {searching && (
             <div className="space-y-2">
               <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">
-                {statusMessage}
-              </p>
+              <p className="text-xs text-muted-foreground text-center">{statusMessage}</p>
             </div>
           )}
 
@@ -208,9 +206,7 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
           )}
 
           {!searching && foundMultisigs.size === 0 && statusMessage && (
-            <p className="text-center text-sm text-muted-foreground">
-              {statusMessage}
-            </p>
+            <p className="text-center text-sm text-muted-foreground">{statusMessage}</p>
           )}
         </div>
       </DialogContent>

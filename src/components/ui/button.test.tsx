@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it } from 'vitest';
 import { Button } from './button';
 
 describe('Button', () => {
@@ -19,7 +19,10 @@ describe('Button', () => {
   it('handles click events', async () => {
     const user = userEvent.setup();
     let clicked = false;
-    render(<Button onClick={() => (clicked = true)}>Click</Button>);
+    const handleClick = () => {
+      clicked = true;
+    };
+    render(<Button onClick={handleClick}>Click</Button>);
 
     await user.click(screen.getByRole('button'));
     expect(clicked).toBe(true);
@@ -53,5 +56,3 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toHaveClass('h-10', 'w-10');
   });
 });
-
-

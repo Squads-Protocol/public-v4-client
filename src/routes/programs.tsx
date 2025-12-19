@@ -1,37 +1,42 @@
-import { Suspense, useState } from 'react';
-import { 
-  Box, 
-  Shield, 
-  Upload, 
-  Search, 
-  CheckCircle2, 
-  AlertCircle,
-  Info,
-  Code,
-  RefreshCw
-} from 'lucide-react';
 import { PublicKey } from '@solana/web3.js';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
+  AlertCircle,
+  Box,
+  CheckCircle2,
+  Code,
+  Info,
+  RefreshCw,
+  Search,
+  Shield,
+  Upload,
+} from 'lucide-react';
+import { Suspense, useState } from 'react';
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
+import { PageSkeleton } from '@/components/layout/PageSkeleton';
 import ChangeUpgradeAuthorityInput from '@/components/programs/ChangeUpgradeAuthorityInput';
 import CreateProgramUpgradeInput from '@/components/programs/CreateProgramUpgradeInput';
-import { useMultisig } from '@/hooks/useServices';
-import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useProgram } from '@/hooks/useProgram';
+import { useMultisig } from '@/hooks/useServices';
 import { cn } from '~/lib/utils';
 
-function ProgramInfoCard({ programInfos, validatedProgramId }: { 
+function ProgramInfoCard({
+  programInfos,
+  validatedProgramId,
+}: {
   programInfos: { programDataAddress: string; authority: string | null } | null;
   validatedProgramId: string;
 }) {
@@ -49,12 +54,11 @@ function ProgramInfoCard({ programInfos, validatedProgramId }: {
 
   return (
     <Card className="card-hover overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-transparent" />
-      <CardHeader className="relative">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/15 dark:bg-green-500/10">
+              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500" />
             </div>
             <div>
               <CardTitle className="text-base">Program Validated</CardTitle>
@@ -63,12 +67,15 @@ function ProgramInfoCard({ programInfos, validatedProgramId }: {
               </CardDescription>
             </div>
           </div>
-          <Badge variant="outline" className="border-green-500/30 text-green-500 bg-green-500/10">
+          <Badge
+            variant="outline"
+            className="border-green-500/30 text-green-600 dark:text-green-500 bg-green-500/10"
+          >
             Active
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="relative space-y-4">
+      <CardContent className="space-y-4">
         <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-3">
           <div>
             <p className="text-xs text-muted-foreground">Program Data Address</p>
@@ -84,7 +91,7 @@ function ProgramInfoCard({ programInfos, validatedProgramId }: {
             </code>
           </div>
         </div>
-        
+
         {!programInfos.authority && (
           <Alert className="border-amber-500/30 bg-amber-500/5">
             <AlertCircle className="h-4 w-4 text-amber-500" />
@@ -99,25 +106,36 @@ function ProgramInfoCard({ programInfos, validatedProgramId }: {
   );
 }
 
-function ProgramActionCard({ 
-  icon: Icon, 
-  title, 
-  description, 
-  iconColor,
-  children 
-}: { 
+function ProgramActionCard({
+  icon: Icon,
+  title,
+  description,
+  variant = 'default',
+  children,
+}: {
   icon: React.ElementType;
   title: string;
   description: string;
-  iconColor: string;
+  variant?: 'default' | 'warning' | 'success';
   children: React.ReactNode;
 }) {
+  const iconStyles = {
+    default: 'bg-muted text-foreground',
+    warning: 'bg-amber-500/15 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500',
+    success: 'bg-green-500/15 dark:bg-green-500/10 text-green-600 dark:text-green-500',
+  };
+
   return (
     <Card className="card-hover h-full">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", iconColor)}>
-            <Icon className="h-5 w-5 text-white" />
+          <div
+            className={cn(
+              'flex h-10 w-10 items-center justify-center rounded-lg',
+              iconStyles[variant]
+            )}
+          >
+            <Icon className="h-5 w-5" />
           </div>
           <div>
             <CardTitle className="text-base">{title}</CardTitle>
@@ -125,9 +143,7 @@ function ProgramActionCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {children}
-      </CardContent>
+      <CardContent>{children}</CardContent>
     </Card>
   );
 }
@@ -155,7 +171,7 @@ const ProgramsPage = () => {
     try {
       new PublicKey(programIdInput);
       setValidatedProgramId(programIdInput);
-    } catch (error) {
+    } catch (_error) {
       setProgramIdError('Invalid Program ID format');
     }
   };
@@ -171,7 +187,7 @@ const ProgramsPage = () => {
 
   return (
     <ErrorBoundary>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<PageSkeleton />}>
         <div className="space-y-6">
           {/* Page Header */}
           <div>
@@ -186,7 +202,8 @@ const ProgramsPage = () => {
             <Info className="h-4 w-4 text-primary" />
             <AlertTitle>Program Manager</AlertTitle>
             <AlertDescription>
-              Enter a program ID to view its details and manage upgrades. Only programs with your Squad as the upgrade authority can be modified.
+              Enter a program ID to view its details and manage upgrades. Only programs with your
+              Squad as the upgrade authority can be modified.
             </AlertDescription>
           </Alert>
 
@@ -194,8 +211,8 @@ const ProgramsPage = () => {
           <Card className="card-hover">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <Search className="h-5 w-5 text-primary" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                  <Search className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <CardTitle>Lookup Program</CardTitle>
@@ -214,7 +231,7 @@ const ProgramsPage = () => {
                     value={programIdInput}
                     onChange={(e) => setProgramIdInput(e.target.value)}
                     className={cn(
-                      "pl-10 font-mono text-sm",
+                      'pl-10 font-mono text-sm',
                       programIdError && 'border-red-500 focus-visible:ring-red-500'
                     )}
                     onKeyDown={(e) => e.key === 'Enter' && validateProgramId()}
@@ -233,9 +250,7 @@ const ProgramsPage = () => {
                   )}
                 </div>
               </div>
-              {programIdError && (
-                <p className="mt-2 text-sm text-red-500">{programIdError}</p>
-              )}
+              {programIdError && <p className="mt-2 text-sm text-red-500">{programIdError}</p>}
             </CardContent>
           </Card>
 
@@ -258,9 +273,9 @@ const ProgramsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <ProgramInfoCard 
-                  programInfos={programInfos || null} 
-                  validatedProgramId={validatedProgramId} 
+                <ProgramInfoCard
+                  programInfos={programInfos || null}
+                  validatedProgramId={validatedProgramId}
                 />
               )}
 
@@ -271,7 +286,7 @@ const ProgramsPage = () => {
                     icon={Shield}
                     title="Change Upgrade Authority"
                     description="Transfer program control to a new authority"
-                    iconColor="bg-amber-500"
+                    variant="warning"
                   >
                     <ChangeUpgradeAuthorityInput
                       programInfos={programInfos}
@@ -283,7 +298,7 @@ const ProgramsPage = () => {
                     icon={Upload}
                     title="Upgrade Program"
                     description="Deploy a new version of the program"
-                    iconColor="bg-green-500"
+                    variant="success"
                   >
                     <CreateProgramUpgradeInput
                       programInfos={programInfos}

@@ -1,21 +1,15 @@
-import { PublicKey, Transaction } from '@solana/web3.js';
-import { XCircle, Loader2 } from 'lucide-react';
-import { useState } from 'react';
-import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { toast } from 'sonner';
+import { PublicKey, Transaction } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
 import { useQueryClient } from '@tanstack/react-query';
-
-import { Button } from '../ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../ui/tooltip';
+import { Loader2, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { waitForConfirmation } from '@/lib/transactionConfirmation';
+import { Button } from '../ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type RejectButtonProps = {
   multisigPda: string;
@@ -46,7 +40,7 @@ const RejectButton = ({
     }
     setIsLoading(true);
     try {
-      let bigIntTransactionIndex = BigInt(transactionIndex);
+      const bigIntTransactionIndex = BigInt(transactionIndex);
 
       if (!isKindValid) {
         toast.error("You can't reject this proposal.");
@@ -65,7 +59,7 @@ const RejectButton = ({
         });
         transaction.add(createProposalInstruction);
       }
-      if (proposalStatus == 'Draft') {
+      if (proposalStatus === 'Draft') {
         const activateProposalInstruction = multisig.instructions.proposalActivate({
           multisigPda: new PublicKey(multisigPda),
           member: wallet.publicKey,

@@ -1,39 +1,20 @@
-import { Suspense } from 'react';
-import { 
-  Users, 
-  Shield, 
-  UserPlus, 
-  Settings2, 
-  Copy, 
-  Check,
-  Trash2,
-  Vote,
-  Pen,
-  Play
-} from 'lucide-react';
-import { useState } from 'react';
 import * as multisig from '@sqds/multisig';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Check, Copy, Pen, Play, Settings2, Shield, UserPlus, Users, Vote } from 'lucide-react';
+import { Suspense, useState } from 'react';
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
+import { PageSkeleton } from '@/components/layout/PageSkeleton';
 import AddMemberInput from '@/components/members/AddMemberInput';
 import ChangeThresholdInput from '@/components/members/ChangeThresholdInput';
 import RemoveMemberButton from '@/components/members/RemoveMemberButton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useMultisig } from '@/hooks/useServices';
-import { renderPermissions } from '@/lib/utils';
-import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
 import { cn } from '~/lib/utils';
 
 function truncateAddress(address: string, chars = 6): string {
@@ -42,27 +23,46 @@ function truncateAddress(address: string, chars = 6): string {
 
 function getPermissionBadges(mask: number) {
   const permissions = [];
-  
+
   // Check each permission bit
-  if (mask & 1) permissions.push({ label: 'Initiate', icon: Pen, color: 'text-blue-500 bg-blue-500/10 border-blue-500/30' });
-  if (mask & 2) permissions.push({ label: 'Vote', icon: Vote, color: 'text-purple-500 bg-purple-500/10 border-purple-500/30' });
-  if (mask & 4) permissions.push({ label: 'Execute', icon: Play, color: 'text-green-500 bg-green-500/10 border-green-500/30' });
-  
+  if (mask & 1)
+    permissions.push({
+      label: 'Initiate',
+      icon: Pen,
+      color: 'text-blue-500 bg-blue-500/10 border-blue-500/30',
+    });
+  if (mask & 2)
+    permissions.push({
+      label: 'Vote',
+      icon: Vote,
+      color: 'text-foreground bg-accent border-border',
+    });
+  if (mask & 4)
+    permissions.push({
+      label: 'Execute',
+      icon: Play,
+      color: 'text-green-500 bg-green-500/10 border-green-500/30',
+    });
+
   if (permissions.length === 0) {
-    permissions.push({ label: 'None', icon: Shield, color: 'text-muted-foreground bg-muted/50 border-muted' });
+    permissions.push({
+      label: 'None',
+      icon: Shield,
+      color: 'text-muted-foreground bg-muted/50 border-muted',
+    });
   }
-  
+
   return permissions;
 }
 
-function MemberCard({ 
-  publicKey, 
+function MemberCard({
+  publicKey,
   permissionMask,
   multisigPda,
   transactionIndex,
   programId,
-  isCurrentUser = false
-}: { 
+  isCurrentUser = false,
+}: {
   publicKey: string;
   permissionMask: number;
   multisigPda: string;
@@ -85,7 +85,7 @@ function MemberCard({
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <Avatar className="h-12 w-12 shrink-0">
-            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-purple-500/20 text-sm font-semibold">
+            <AvatarFallback className="bg-accent text-sm font-semibold">
               {publicKey.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -97,7 +97,9 @@ function MemberCard({
                 {truncateAddress(publicKey)}
               </code>
               {isCurrentUser && (
-                <Badge variant="secondary" className="text-[10px]">You</Badge>
+                <Badge variant="secondary" className="text-[10px]">
+                  You
+                </Badge>
               )}
               <Button
                 variant="ghost"
@@ -112,7 +114,7 @@ function MemberCard({
                 )}
               </Button>
             </div>
-            
+
             {/* Permissions */}
             <div className="mt-2 flex flex-wrap gap-1.5">
               <TooltipProvider>
@@ -121,17 +123,12 @@ function MemberCard({
                   return (
                     <Tooltip key={perm.label}>
                       <TooltipTrigger asChild>
-                        <Badge 
-                          variant="outline" 
-                          className={cn("gap-1 text-[10px]", perm.color)}
-                        >
+                        <Badge variant="outline" className={cn('gap-1 text-[10px]', perm.color)}>
                           <Icon className="h-3 w-3" />
                           {perm.label}
                         </Badge>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        {perm.label} permission
-                      </TooltipContent>
+                      <TooltipContent>{perm.label} permission</TooltipContent>
                     </Tooltip>
                   );
                 })}
@@ -179,9 +176,15 @@ function MembersSkeleton() {
   );
 }
 
-function ThresholdVisualizer({ threshold, memberCount }: { threshold: number; memberCount: number }) {
+function ThresholdVisualizer({
+  threshold,
+  memberCount,
+}: {
+  threshold: number;
+  memberCount: number;
+}) {
   const percentage = (threshold / memberCount) * 100;
-  
+
   return (
     <Card className="card-hover overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
@@ -216,22 +219,20 @@ const ConfigurationPage = () => {
 
   return (
     <ErrorBoundary>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<PageSkeleton />}>
         <div className="space-y-6">
           {/* Page Header */}
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Members</h1>
-            <p className="mt-1 text-muted-foreground">
-              Manage Squad members and approval settings
-            </p>
+            <p className="mt-1 text-muted-foreground">Manage Squad members and approval settings</p>
           </div>
 
           {/* Stats Row */}
           <div className="grid gap-4 sm:grid-cols-3">
             <Card className="card-hover">
               <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <Users className="h-5 w-5 text-primary" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                  <Users className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
@@ -243,8 +244,8 @@ const ConfigurationPage = () => {
             </Card>
             <Card className="card-hover">
               <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                  <Shield className="h-5 w-5 text-green-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/15 dark:bg-green-500/10">
+                  <Shield className="h-5 w-5 text-green-600 dark:text-green-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
@@ -256,15 +257,14 @@ const ConfigurationPage = () => {
             </Card>
             <Card className="card-hover">
               <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                  <Vote className="h-5 w-5 text-blue-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                  <Vote className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
-                    {isLoading || !multisigConfig 
-                      ? '...' 
-                      : `${((multisigConfig.threshold / multisigConfig.members.length) * 100).toFixed(0)}%`
-                    }
+                    {isLoading || !multisigConfig
+                      ? '...'
+                      : `${((multisigConfig.threshold / multisigConfig.members.length) * 100).toFixed(0)}%`}
                   </p>
                   <p className="text-xs text-muted-foreground">Required %</p>
                 </div>
@@ -279,14 +279,12 @@ const ConfigurationPage = () => {
               <Card>
                 <CardHeader className="border-b border-border/50">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                      <Users className="h-4 w-4 text-primary" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                      <Users className="h-4 w-4 text-foreground" />
                     </div>
                     <div>
                       <CardTitle>Squad Members</CardTitle>
-                      <CardDescription>
-                        Members with signing authority
-                      </CardDescription>
+                      <CardDescription>Members with signing authority</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -315,9 +313,9 @@ const ConfigurationPage = () => {
             <div className="space-y-4">
               {/* Threshold Visualizer */}
               {multisigConfig && (
-                <ThresholdVisualizer 
-                  threshold={multisigConfig.threshold} 
-                  memberCount={multisigConfig.members.length} 
+                <ThresholdVisualizer
+                  threshold={multisigConfig.threshold}
+                  memberCount={multisigConfig.members.length}
                 />
               )}
 
@@ -325,14 +323,12 @@ const ConfigurationPage = () => {
               <Card className="card-hover">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
-                      <UserPlus className="h-4 w-4 text-green-500" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/15 dark:bg-green-500/10">
+                      <UserPlus className="h-4 w-4 text-green-600 dark:text-green-500" />
                     </div>
                     <div>
                       <CardTitle className="text-base">Add Member</CardTitle>
-                      <CardDescription className="text-xs">
-                        Invite a new signer
-                      </CardDescription>
+                      <CardDescription className="text-xs">Invite a new signer</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -349,8 +345,8 @@ const ConfigurationPage = () => {
               <Card className="card-hover">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
-                      <Settings2 className="h-4 w-4 text-amber-500" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 dark:bg-amber-500/10">
+                      <Settings2 className="h-4 w-4 text-amber-600 dark:text-amber-500" />
                     </div>
                     <div>
                       <CardTitle className="text-base">Change Threshold</CardTitle>

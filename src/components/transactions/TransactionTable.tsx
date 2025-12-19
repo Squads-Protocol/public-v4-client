@@ -1,11 +1,11 @@
 import * as multisig from '@sqds/multisig';
+import { Link } from 'react-router-dom';
+import { useMultisig } from '@/hooks/useServices';
+import { useExplorerUrl, useRpcUrl } from '@/hooks/useSettings';
+import { TableBody, TableCell, TableRow } from '../ui/table';
 import ApproveButton from './ApproveButton';
 import ExecuteButton from './ExecuteButton';
 import RejectButton from './RejectButton';
-import { TableBody, TableCell, TableRow } from '../ui/table';
-import { useExplorerUrl, useRpcUrl } from '@/hooks/useSettings';
-import { Link } from 'react-router-dom';
-import { useMultisig } from '@/hooks/useServices';
 
 interface ActionButtonsProps {
   multisigPda: string;
@@ -28,6 +28,7 @@ export default function TransactionTable({
   programId?: string;
 }) {
   const { rpcUrl } = useRpcUrl();
+  const { explorerUrl } = useExplorerUrl();
   const { data: multisigConfig } = useMultisig();
   if (transactions.length === 0) {
     return (
@@ -51,7 +52,7 @@ export default function TransactionTable({
             <TableCell className="text-blue-500">
               <Link
                 target={`_blank`}
-                to={createSolanaExplorerUrl(transaction.transactionPda, rpcUrl!)}
+                to={createSolanaExplorerUrl(transaction.transactionPda, rpcUrl!, explorerUrl)}
               >
                 {transaction.transactionPda}
               </Link>
@@ -108,8 +109,7 @@ function ActionButtons({
   );
 }
 
-function createSolanaExplorerUrl(publicKey: string, rpcUrl: string): string {
-  const { explorerUrl } = useExplorerUrl();
+function createSolanaExplorerUrl(publicKey: string, rpcUrl: string, explorerUrl: string): string {
   const baseUrl = `${explorerUrl}/address/`;
   const clusterQuery = '?cluster=custom&customUrl=';
   const encodedRpcUrl = encodeURIComponent(rpcUrl);

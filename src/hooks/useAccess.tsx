@@ -1,7 +1,6 @@
-import * as multisig from '@sqds/multisig';
-import { useMultisig } from './useServices';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { isMember } from '@/lib/utils';
+import { useMultisig } from './useServices';
 
 export const useAccess = () => {
   const { data: multisig } = useMultisig();

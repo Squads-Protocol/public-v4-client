@@ -1,3 +1,19 @@
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import {
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  TransactionMessage,
+  VersionedTransaction,
+} from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
+import { useQueryClient } from '@tanstack/react-query';
+import { ArrowRight, Loader2, Send, Wallet } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useAccess } from '@/hooks/useAccess';
+import { waitForConfirmation } from '@/lib/transactionConfirmation';
 import {
   Dialog,
   DialogContent,
@@ -6,27 +22,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog';
+import { useMultisigData } from '~/hooks/useMultisigData';
+import { isPublickey } from '~/lib/isPublickey';
 import { Button } from '../ui/button';
-import { useState } from 'react';
-import * as multisig from '@sqds/multisig';
-import { useWallet } from '@solana/wallet-adapter-react';
-import {
-  LAMPORTS_PER_SOL,
-  PublicKey,
-  SystemProgram,
-  TransactionMessage,
-  VersionedTransaction,
-} from '@solana/web3.js';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { toast } from 'sonner';
-import { Send, Loader2, Wallet, ArrowRight } from 'lucide-react';
-import { isPublickey } from '~/lib/isPublickey';
-import { useMultisigData } from '~/hooks/useMultisigData';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAccess } from '@/hooks/useAccess';
-import { waitForConfirmation } from '@/lib/transactionConfirmation';
 
 type SendSolProps = {
   multisigPda: string;
@@ -44,7 +44,7 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
   const { connection, programId } = useMultisigData();
   const queryClient = useQueryClient();
   const parsedAmount = parseFloat(amount);
-  const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
+  const isAmountValid = !Number.isNaN(parsedAmount) && parsedAmount > 0;
   const isMember = useAccess();
 
   const transfer = async () => {
@@ -66,7 +66,7 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
       });
 
       const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-        // @ts-ignore
+        // @ts-expect-error
         connection,
         new PublicKey(multisigPda)
       );
@@ -86,7 +86,7 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
         multisigPda: new PublicKey(multisigPda),
         creator: wallet.publicKey,
         ephemeralSigners: 0,
-        // @ts-ignore
+        // @ts-expect-error
         transactionMessage: transferMessage,
         transactionIndex: transactionIndexBN,
         addressLookupTableAccounts: [],
@@ -162,17 +162,15 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
             <Wallet className="h-5 w-5 text-primary" />
             Transfer SOL
           </DialogTitle>
-          <DialogDescription>
-            Create a proposal to send SOL from the vault.
-          </DialogDescription>
+          <DialogDescription>Create a proposal to send SOL from the vault.</DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Recipient Address</Label>
-            <Input 
-              placeholder="Enter Solana address..." 
-              type="text" 
+            <Input
+              placeholder="Enter Solana address..."
+              type="text"
               onChange={(e) => setRecipient(e.target.value)}
               className="font-mono text-sm"
             />
@@ -183,15 +181,13 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
 
           <div className="space-y-2">
             <Label>Amount (SOL)</Label>
-            <Input 
-              placeholder="0.00" 
-              type="number" 
+            <Input
+              placeholder="0.00"
+              type="number"
               step="0.01"
-              onChange={(e) => setAmount(e.target.value)} 
+              onChange={(e) => setAmount(e.target.value)}
             />
-            {amount && !isAmountValid && (
-              <p className="text-xs text-destructive">Invalid amount</p>
-            )}
+            {amount && !isAmountValid && <p className="text-xs text-destructive">Invalid amount</p>}
           </div>
 
           <Button

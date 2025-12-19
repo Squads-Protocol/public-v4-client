@@ -2,3 +2,8 @@ node_modules/
 dist/
 .idea/
 squads-public-verify/
+.cursor/
+.claude/
+PR_DESCRIPTION.md
+DESIGN.md
+.mcp.json

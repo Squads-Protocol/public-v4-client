@@ -1,17 +1,17 @@
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
+import { types as multisigTypes } from '@sqds/multisig';
+import { useQueryClient } from '@tanstack/react-query';
+import invariant from 'invariant';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useMultisigData } from '@/hooks/useMultisigData';
+import { useMultisig } from '@/hooks/useServices';
+import { waitForConfirmation } from '@/lib/transactionConfirmation';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import * as multisig from '@sqds/multisig';
-import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
-import { toast } from 'sonner';
-import { useMultisig } from '@/hooks/useServices';
-import invariant from 'invariant';
-import { types as multisigTypes } from '@sqds/multisig';
-import { waitForConfirmation } from '@/lib/transactionConfirmation';
-import { useQueryClient } from '@tanstack/react-query';
-import { useMultisigData } from '@/hooks/useMultisigData';
 
 type ChangeThresholdInputProps = {
   multisigPda: string;
@@ -42,7 +42,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
     if (parseInt(threshold, 10) < 1) {
       return 'Threshold must be at least 1.';
     }
-    if (parseInt(threshold) > totalVoters) {
+    if (parseInt(threshold, 10) > totalVoters) {
       return `Threshold cannot exceed ${totalVoters} (total voters).`;
     }
     return null; // Valid input
@@ -63,7 +63,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
       actions: [
         {
           __kind: 'ChangeThreshold',
-          newThreshold: parseInt(threshold),
+          newThreshold: parseInt(threshold, 10),
         },
       ],
       creator: wallet.publicKey,
@@ -125,7 +125,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
           })
         }
         disabled={
-          !threshold || (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10))
+          !threshold || (!!multisigConfig && multisigConfig.threshold === parseInt(threshold, 10))
         }
       >
         Change Threshold

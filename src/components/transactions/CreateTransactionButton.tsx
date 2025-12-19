@@ -1,3 +1,11 @@
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Message, PublicKey, TransactionInstruction } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
+import * as bs58 from 'bs58';
+import invariant from 'invariant';
+import { FileCode, FlaskConical, Play, Plus, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -6,21 +14,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import * as bs58 from 'bs58';
+import { VaultSelector } from '@/components/vault/VaultSelector';
+import { useMultisigData } from '@/hooks/useMultisigData';
+import { importTransaction } from '@/lib/transaction/importTransaction';
+import { simulateEncodedTransaction } from '@/lib/transaction/simulateEncodedTransaction';
 import { Button } from '../ui/button';
-import { useState } from 'react';
-import * as multisig from '@sqds/multisig';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { Message, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { toast } from 'sonner';
-import { Plus, FileCode, Play, FlaskConical, Sparkles } from 'lucide-react';
-import { simulateEncodedTransaction } from '@/lib/transaction/simulateEncodedTransaction';
-import { importTransaction } from '@/lib/transaction/importTransaction';
-import { useMultisigData } from '@/hooks/useMultisigData';
-import invariant from 'invariant';
-import { VaultSelector } from '@/components/vault/VaultSelector';
 
 const CreateTransaction = () => {
   const wallet = useWallet();
@@ -34,7 +34,7 @@ const CreateTransaction = () => {
     invariant(programId, 'Program ID not found');
     invariant(multisigAddress, 'Multisig address not found. Please create a multisig first.');
     invariant(wallet.publicKey, 'Wallet ID not found');
-    let memo = 'Hello from Solana land!';
+    const memo = 'Hello from Solana land!';
     const vaultAddress = multisig.getVaultPda({
       index: vaultIndex,
       multisigPda: new PublicKey(multisigAddress),
@@ -67,10 +67,7 @@ const CreateTransaction = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen} modal={false}>
       <DialogTrigger asChild>
-        <Button
-          disabled={!wallet || !wallet.publicKey}
-          className="gap-2"
-        >
+        <Button disabled={!wallet || !wallet.publicKey} className="gap-2">
           <Plus className="h-4 w-4" />
           Import Transaction
         </Button>
@@ -85,7 +82,7 @@ const CreateTransaction = () => {
             Propose a transaction from a base58 encoded transaction message.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
             <div>

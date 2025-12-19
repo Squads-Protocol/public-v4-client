@@ -1,6 +1,5 @@
-import * as React from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '~/lib/utils';
+import * as React from 'react';
 import { Button } from '~/components/ui/button';
 import {
   Command,
@@ -11,6 +10,7 @@ import {
 } from '~/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { useVaultIndex } from '~/hooks/useVaultIndex';
+import { cn } from '~/lib/utils';
 
 // Generate vault indices from 0 to 15
 const vaultIndices = Array.from({ length: 256 }, (_, index) => ({

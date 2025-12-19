@@ -1,6 +1,6 @@
+import { useNavigate } from 'react-router-dom';
 import { useMultisigAddress } from '@/hooks/useMultisigAddress';
 import { Button } from '../ui/button';
-import { useNavigate } from 'react-router-dom';
 
 export const ChangeMultisigFromNav = () => {
   const { setMultisigAddress } = useMultisigAddress(); // Use React Query hook

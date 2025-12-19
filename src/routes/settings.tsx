@@ -1,39 +1,26 @@
+import { Code, ExternalLink, Globe, Info, Server } from 'lucide-react';
 import { Suspense } from 'react';
-import { 
-  Settings, 
-  Globe, 
-  Server, 
-  Code,
-  ExternalLink,
-  Info
-} from 'lucide-react';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
+import { PageSkeleton } from '@/components/layout/PageSkeleton';
+import SetExplorerInput from '@/components/settings/SetExplorerInput';
 import SetProgramIdInput from '@/components/settings/SetProgramIdInput';
 import SetRpcUrlInput from '@/components/settings/SetRpcUrlInput';
-import SetExplorerInput from '@/components/settings/SetExplorerInput';
-import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
-import { useRpcUrl, useExplorerUrl, useProgramId } from '@/hooks/useSettings';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { useExplorerUrl, useProgramId, useRpcUrl } from '@/hooks/useSettings';
 
-function SettingCard({ 
-  icon: Icon, 
-  title, 
-  description, 
-  iconColor,
+function SettingCard({
+  icon: Icon,
+  title,
+  description,
   children,
-  badge
-}: { 
+  badge,
+}: {
   icon: React.ElementType;
   title: string;
   description: string;
-  iconColor?: string;
   children: React.ReactNode;
   badge?: string;
 }) {
@@ -42,8 +29,8 @@ function SettingCard({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconColor || 'bg-primary/10'}`}>
-              <Icon className={`h-5 w-5 ${iconColor ? 'text-white' : 'text-primary'}`} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+              <Icon className="h-5 w-5 text-foreground" />
             </div>
             <div>
               <CardTitle className="text-lg">{title}</CardTitle>
@@ -57,9 +44,7 @@ function SettingCard({
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        {children}
-      </CardContent>
+      <CardContent>{children}</CardContent>
     </Card>
   );
 }
@@ -71,14 +56,15 @@ function CurrentSettings() {
 
   return (
     <Card className="card-hover overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
-      <CardHeader className="relative">
+      <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Info className="h-4 w-4 text-primary" />
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-muted">
+            <Info className="h-3.5 w-3.5 text-foreground" />
+          </div>
           Current Configuration
         </CardTitle>
       </CardHeader>
-      <CardContent className="relative space-y-3">
+      <CardContent className="space-y-3">
         <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
           <p className="text-xs text-muted-foreground">RPC Endpoint</p>
           <code className="mt-1 block truncate text-xs">{rpcUrl || 'Default (Mainnet)'}</code>
@@ -99,7 +85,7 @@ function CurrentSettings() {
 const SettingsPage = () => {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<PageSkeleton />}>
         <div className="space-y-6">
           {/* Page Header */}
           <div>
@@ -114,7 +100,8 @@ const SettingsPage = () => {
             <Info className="h-4 w-4 text-primary" />
             <AlertTitle>Settings are stored locally</AlertTitle>
             <AlertDescription>
-              All settings are saved in your browser's local storage and will persist across sessions.
+              All settings are saved in your browser's local storage and will persist across
+              sessions.
             </AlertDescription>
           </Alert>
 
@@ -125,7 +112,6 @@ const SettingsPage = () => {
                 icon={Server}
                 title="RPC Endpoint"
                 description="Configure the Solana RPC URL for blockchain interactions"
-                iconColor="bg-blue-500/10"
                 badge="Network"
               >
                 <div className="space-y-4">
@@ -142,7 +128,6 @@ const SettingsPage = () => {
                 icon={ExternalLink}
                 title="Block Explorer"
                 description="Choose which explorer to use for viewing transactions and accounts"
-                iconColor="bg-green-500/10"
                 badge="Display"
               >
                 <div className="space-y-4">
@@ -159,7 +144,6 @@ const SettingsPage = () => {
                 icon={Code}
                 title="Program ID"
                 description="Set a custom Squads multisig program ID"
-                iconColor="bg-purple-500/10"
                 badge="Advanced"
               >
                 <div className="space-y-4">

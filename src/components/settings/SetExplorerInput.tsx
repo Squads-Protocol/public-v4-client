@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useExplorerUrl } from '~/hooks/useSettings';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 const DEBOUNCE_DELAY = 500; // 500ms debounce
 

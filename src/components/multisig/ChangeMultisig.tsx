@@ -1,6 +1,6 @@
-import { Card, CardContent } from '../ui/card';
 import { Button } from '~/components/ui/button';
 import { useMultisigAddress } from '~/hooks/useMultisigAddress';
+import { Card, CardContent } from '../ui/card';
 
 export function ChangeMultisig() {
   const { setMultisigAddress } = useMultisigAddress(); // Use React Query hook

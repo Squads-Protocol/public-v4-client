@@ -1,19 +1,19 @@
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import * as multisig from '@sqds/multisig';
 import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
+import { useQueryClient } from '@tanstack/react-query';
+import invariant from 'invariant';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { isPublickey } from '@/lib/isPublickey';
-import { useMultisig } from '@/hooks/useServices';
 import { useAccess } from '@/hooks/useAccess';
 import { useMultisigData } from '@/hooks/useMultisigData';
-import { isMember } from '@/lib/utils';
-import invariant from 'invariant';
+import { useMultisig } from '@/hooks/useServices';
+import { isPublickey } from '@/lib/isPublickey';
 import { waitForConfirmation } from '@/lib/transactionConfirmation';
-import { useQueryClient } from '@tanstack/react-query';
+import { isMember } from '@/lib/utils';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 type AddMemberInputProps = {
   multisigPda: string;

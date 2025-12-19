@@ -1,5 +1,5 @@
-"use client";
-import { PublicKey } from "@solana/web3.js";
+'use client';
+import { PublicKey } from '@solana/web3.js';
 
 export function isPublickey(key: string) {
   try {
@@ -7,10 +7,10 @@ export function isPublickey(key: string) {
     if (pk) {
       return true;
     } else {
-      console.log("Invalid public key");
+      console.log('Invalid public key');
       return false;
     }
-  } catch (err) {
+  } catch (_err) {
     return false;
   }
 }

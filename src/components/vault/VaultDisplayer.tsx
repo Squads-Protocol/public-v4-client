@@ -1,7 +1,7 @@
 'use client';
+import { useMultisigData } from '~/hooks/useMultisigData';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { VaultSelector } from './VaultSelector';
-import { useMultisigData } from '~/hooks/useMultisigData';
 
 type VaultDisplayerProps = {};
 

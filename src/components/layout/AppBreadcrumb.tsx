@@ -1,5 +1,5 @@
-import { useLocation, Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 import {
   Breadcrumb,

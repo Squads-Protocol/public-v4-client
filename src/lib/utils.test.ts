@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { cn, range } from './utils';
 
 describe('cn', () => {
@@ -44,5 +44,3 @@ describe('range', () => {
     expect(range(5, 1)).toEqual([]);
   });
 });
-
-

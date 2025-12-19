@@ -1,25 +1,37 @@
-import { Suspense, useState, useMemo } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import * as multisig from '@sqds/multisig';
 import {
+  AlertCircle,
   ArrowLeftRight,
-  Plus,
-  ExternalLink,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  MoreHorizontal,
+  ExternalLink,
   Filter,
   X,
+  XCircle,
 } from 'lucide-react';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
+import ApproveButton from '@/components/transactions/ApproveButton';
+import CreateTransaction from '@/components/transactions/CreateTransactionButton';
+import ExecuteButton from '@/components/transactions/ExecuteButton';
+import RejectButton from '@/components/transactions/RejectButton';
+import { TransactionDetailDrawer } from '@/components/transactions/TransactionDetailDrawer';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import {
   Table,
   TableBody,
@@ -28,27 +40,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-} from '@/components/ui/pagination';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import CreateTransaction from '@/components/transactions/CreateTransactionButton';
-import ApproveButton from '@/components/transactions/ApproveButton';
-import ExecuteButton from '@/components/transactions/ExecuteButton';
-import RejectButton from '@/components/transactions/RejectButton';
-import { TransactionDetailDrawer } from '@/components/transactions/TransactionDetailDrawer';
-import { useMultisig, useTransactions } from '@/hooks/useServices';
 import { useMultisigData } from '@/hooks/useMultisigData';
+import { useMultisig, useTransactions } from '@/hooks/useServices';
 import { useExplorerUrl, useRpcUrl } from '@/hooks/useSettings';
-import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
-import * as multisig from '@sqds/multisig';
 import { cn } from '~/lib/utils';
 
 const TRANSACTIONS_PER_PAGE = 10;
@@ -115,7 +109,7 @@ function getStatusConfig(status: string, stale: boolean) {
       variant: 'outline' as const,
       icon: AlertCircle,
       className: 'border-amber-500/30 text-amber-500 bg-amber-500/10',
-      animated: false
+      animated: false,
     };
   }
 
@@ -126,7 +120,7 @@ function getStatusConfig(status: string, stale: boolean) {
         variant: 'outline' as const,
         icon: CheckCircle2,
         className: 'border-green-500/30 text-green-500 bg-green-500/10',
-        animated: false
+        animated: false,
       };
     case 'Rejected':
       return {
@@ -134,7 +128,7 @@ function getStatusConfig(status: string, stale: boolean) {
         variant: 'outline' as const,
         icon: XCircle,
         className: 'border-red-500/30 text-red-500 bg-red-500/10',
-        animated: false
+        animated: false,
       };
     case 'Executed':
       return {
@@ -142,7 +136,7 @@ function getStatusConfig(status: string, stale: boolean) {
         variant: 'outline' as const,
         icon: CheckCircle2,
         className: 'border-blue-500/30 text-blue-500 bg-blue-500/10',
-        animated: false
+        animated: false,
       };
     case 'Cancelled':
       return {
@@ -150,7 +144,7 @@ function getStatusConfig(status: string, stale: boolean) {
         variant: 'outline' as const,
         icon: XCircle,
         className: 'border-muted-foreground/30 text-muted-foreground bg-muted/50',
-        animated: false
+        animated: false,
       };
     case 'Active':
       return {
@@ -158,16 +152,15 @@ function getStatusConfig(status: string, stale: boolean) {
         variant: 'outline' as const,
         icon: Clock,
         className: 'border-primary/30 text-primary bg-primary/10',
-        animated: true
+        animated: true,
       };
-    case 'None':
     default:
       return {
         label: 'Pending',
         variant: 'outline' as const,
         icon: Clock,
         className: 'border-muted-foreground/30 text-muted-foreground bg-muted/30',
-        animated: true
+        animated: true,
       };
   }
 }
@@ -177,15 +170,15 @@ function StatusBadge({ status, stale }: { status: string; stale: boolean }) {
   const Icon = config.icon;
 
   return (
-    <Badge 
-      variant={config.variant} 
+    <Badge
+      variant={config.variant}
       className={cn(
-        "gap-1.5 transition-all duration-300", 
+        'gap-1.5 transition-all duration-300',
         config.className,
-        config.animated && "pulse-subtle"
+        config.animated && 'pulse-subtle'
       )}
     >
-      <Icon className={cn("h-3 w-3", config.animated && "animate-pulse")} />
+      <Icon className={cn('h-3 w-3', config.animated && 'animate-pulse')} />
       {config.label}
     </Badge>
   );
@@ -389,9 +382,7 @@ export default function TransactionsPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
-            <p className="mt-1 text-muted-foreground">
-              Manage and execute multisig proposals
-            </p>
+            <p className="mt-1 text-muted-foreground">Manage and execute multisig proposals</p>
           </div>
           <CreateTransaction />
         </div>
@@ -426,7 +417,9 @@ export default function TransactionsPage() {
                 <Clock className="h-5 w-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold font-mono-numbers">{page}/{totalPages || 1}</p>
+                <p className="text-2xl font-bold font-mono-numbers">
+                  {page}/{totalPages || 1}
+                </p>
                 <p className="text-xs text-muted-foreground">Current Page</p>
               </div>
             </CardContent>

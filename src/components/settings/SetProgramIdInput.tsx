@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
 import { toast } from 'sonner';
-import { isPublickey } from '~/lib/isPublickey';
 import { useProgramId } from '~/hooks/useSettings'; // Now using React Query!
+import { isPublickey } from '~/lib/isPublickey';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 const SetProgramIdInput = () => {
   const { programId: storedProgramId, setProgramId } = useProgramId(); // Use React Query

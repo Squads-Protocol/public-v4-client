@@ -1,22 +1,22 @@
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import {
-  AddressLookupTableAccount,
+  type AddressLookupTableAccount,
   ComputeBudgetProgram,
   PublicKey,
-  TransactionInstruction,
+  type TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { Play, Loader2, Settings2, Zap } from 'lucide-react';
-import { useState } from 'react';
 import * as multisig from '@sqds/multisig';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-
+import { Loader2, Play, Settings2, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useMultisigData } from '@/hooks/useMultisigData';
+import { waitForConfirmation } from '@/lib/transactionConfirmation';
+import { range } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 import {
   Dialog,
   DialogContent,
@@ -25,15 +25,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../ui/tooltip';
-import { range } from '@/lib/utils';
-import { useMultisigData } from '@/hooks/useMultisigData';
-import { waitForConfirmation } from '@/lib/transactionConfirmation';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type WithALT = {
   instruction: TransactionInstruction;
@@ -75,7 +69,7 @@ const ExecuteButton = ({
     try {
       const member = wallet.publicKey;
       if (!wallet.signAllTransactions) return;
-      let bigIntTransactionIndex = BigInt(transactionIndex);
+      const bigIntTransactionIndex = BigInt(transactionIndex);
 
       if (!isTransactionReady) {
         toast.error('Proposal has not reached threshold.');
@@ -92,22 +86,22 @@ const ExecuteButton = ({
       let txType;
       try {
         await multisig.accounts.VaultTransaction.fromAccountAddress(
-          // @ts-ignore
+          // @ts-expect-error
           connection,
           transactionPda
         );
         txType = 'vault';
-      } catch (error) {
+      } catch (_error) {
         try {
           await multisig.accounts.ConfigTransaction.fromAccountAddress(
-            // @ts-ignore
+            // @ts-expect-error
             connection,
             transactionPda
           );
           txType = 'config';
-        } catch (e) {
+        } catch (_e) {
           txData = await multisig.accounts.Batch.fromAccountAddress(
-            // @ts-ignore
+            // @ts-expect-error
             connection,
             transactionPda
           );
@@ -115,7 +109,7 @@ const ExecuteButton = ({
         }
       }
 
-      let transactions: VersionedTransaction[] = [];
+      const transactions: VersionedTransaction[] = [];
 
       const priorityFeeInstruction = ComputeBudgetProgram.setComputeUnitPrice({
         microLamports: priorityFeeLamports,
@@ -124,12 +118,12 @@ const ExecuteButton = ({
         units: computeUnitBudget,
       });
 
-      let blockhash = (await connection.getLatestBlockhash()).blockhash;
+      const blockhash = (await connection.getLatestBlockhash()).blockhash;
 
-      if (txType == 'vault') {
+      if (txType === 'vault') {
         const resp = await multisig.instructions.vaultTransactionExecute({
           multisigPda: new PublicKey(multisigPda),
-          // @ts-ignore
+          // @ts-expect-error
           connection,
           member,
           transactionIndex: bigIntTransactionIndex,
@@ -144,7 +138,7 @@ const ExecuteButton = ({
             }).compileToV0Message(resp.lookupTableAccounts)
           )
         );
-      } else if (txType == 'config') {
+      } else if (txType === 'config') {
         const executeIx = multisig.instructions.configTransactionExecute({
           multisigPda: new PublicKey(multisigPda),
           member,
@@ -161,7 +155,7 @@ const ExecuteButton = ({
             }).compileToV0Message()
           )
         );
-      } else if (txType == 'batch' && txData) {
+      } else if (txType === 'batch' && txData) {
         const executedBatchIndex = txData.executedTransactionIndex;
         const batchSize = txData.size;
 
@@ -176,7 +170,7 @@ const ExecuteButton = ({
             range(executedBatchIndex + 1, batchSize).map(async (batchIndex) => {
               const { instruction: transactionExecuteIx, lookupTableAccounts } =
                 await multisig.instructions.batchExecuteTransaction({
-                  // @ts-ignore
+                  // @ts-expect-error
                   connection,
                   member,
                   batchIndex: bigIntTransactionIndex,
@@ -188,7 +182,11 @@ const ExecuteButton = ({
               const message = new TransactionMessage({
                 payerKey: member,
                 recentBlockhash: blockhash,
-                instructions: [priorityFeeInstruction, computeUnitInstruction, transactionExecuteIx],
+                instructions: [
+                  priorityFeeInstruction,
+                  computeUnitInstruction,
+                  transactionExecuteIx,
+                ],
               }).compileToV0Message(lookupTableAccounts);
 
               return new VersionedTransaction(message);
@@ -199,7 +197,7 @@ const ExecuteButton = ({
 
       const signedTransactions = await wallet.signAllTransactions(transactions);
 
-      let signatures = [];
+      const signatures = [];
       for (const signedTx of signedTransactions) {
         const signature = await connection.sendRawTransaction(signedTx.serialize(), {
           skipPreflight: true,
@@ -239,7 +237,7 @@ const ExecuteButton = ({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      
+
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -250,7 +248,7 @@ const ExecuteButton = ({
             Configure priority fees and compute limits for execution.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm">

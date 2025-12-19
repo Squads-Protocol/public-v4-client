@@ -1,7 +1,7 @@
 'use client';
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
 import CreateSquadForm from '@/components/multisig/CreateSquadForm';
 import { Card, CardContent } from '@/components/ui/card';
-import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
 
 export default function CreateSquad() {
   return (

@@ -1,7 +1,7 @@
-import { Component, ReactNode } from 'react';
-import { Button } from '../ui/button';
+import { Component, type ReactNode } from 'react';
 import SetRpcUrlInput from '@/components/settings/SetRpcUrlInput';
-import { Card, CardContent, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

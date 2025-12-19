@@ -1,15 +1,12 @@
 'use client';
-import * as bs58 from 'bs58';
 import {
   Message,
-  MessageAccountKeys,
   MessageV0,
-  PublicKey,
-  Transaction,
+  type PublicKey,
   TransactionMessage,
   VersionedMessage,
-  VersionedTransaction,
 } from '@solana/web3.js';
+import * as bs58 from 'bs58';
 
 interface DeserializedTransaction {
   message: TransactionMessage;

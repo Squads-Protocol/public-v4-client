@@ -1,17 +1,19 @@
 import {
-  ExternalLink,
-  Copy,
-  Check,
-  Clock,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
-  User,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  ExternalLink,
   Hash,
-  Calendar,
+  User,
+  XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
-
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
   SheetContent,
@@ -19,14 +21,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '~/lib/utils';
 import ApproveButton from './ApproveButton';
 import ExecuteButton from './ExecuteButton';
 import RejectButton from './RejectButton';
-import { cn } from '~/lib/utils';
 
 type TransactionDetailDrawerProps = {
   open: boolean;
@@ -88,7 +86,6 @@ function getStatusConfig(status: string, stale: boolean) {
         icon: Clock,
         className: 'border-primary/30 text-primary bg-primary/10',
       };
-    case 'None':
     default:
       return {
         label: 'Pending',
@@ -171,7 +168,12 @@ export function TransactionDetailDrawer({
                 <code className="flex-1 break-all font-mono text-xs">
                   {transaction.transactionPda}
                 </code>
-                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={copyAddress}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={copyAddress}
+                >
                   {copied ? (
                     <Check className="h-3.5 w-3.5 text-green-500" />
                   ) : (

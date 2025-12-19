@@ -1,11 +1,11 @@
 'use client';
 import {
-  AddressLookupTableAccount,
-  Connection,
-  Message,
+  type AddressLookupTableAccount,
+  type Connection,
+  type Message,
   SystemProgram,
-  VersionedMessage,
-  VersionedTransaction,
+  type VersionedMessage,
+  type VersionedTransaction,
 } from '@solana/web3.js';
 
 export async function getAccountsForSimulation(

@@ -1,4 +1,19 @@
 import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferCheckedInstruction,
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useAccess } from '@/hooks/useAccess';
+import { waitForConfirmation } from '@/lib/transactionConfirmation';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -6,25 +21,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog';
-import { Button } from '../ui/button';
-import { useState } from 'react';
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  createTransferCheckedInstruction,
-  getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
-import * as multisig from '@sqds/multisig';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { Input } from '../ui/input';
-import { toast } from 'sonner';
-import { isPublickey } from '~/lib/isPublickey';
 import { useMultisigData } from '~/hooks/useMultisigData';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAccess } from '@/hooks/useAccess';
-import { waitForConfirmation } from '@/lib/transactionConfirmation';
+import { isPublickey } from '~/lib/isPublickey';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 type SendTokensProps = {
   tokenAccount: string;
@@ -52,7 +52,7 @@ const SendTokens = ({
 
   const queryClient = useQueryClient();
   const parsedAmount = parseFloat(amount);
-  const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
+  const isAmountValid = !Number.isNaN(parsedAmount) && parsedAmount > 0;
   const isMember = useAccess();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -101,7 +101,7 @@ const SendTokens = ({
     );
 
     const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-      // @ts-ignore
+      // @ts-expect-error
       connection,
       new PublicKey(multisigPda)
     );
@@ -121,7 +121,7 @@ const SendTokens = ({
       multisigPda: new PublicKey(multisigPda),
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      // @ts-ignore
+      // @ts-expect-error
       transactionMessage: transferMessage,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],

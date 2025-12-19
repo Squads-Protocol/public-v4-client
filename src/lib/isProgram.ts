@@ -1,9 +1,9 @@
-"use client";
-import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
+'use client';
+import { Connection, clusterApiUrl, PublicKey } from '@solana/web3.js';
 
 export async function isProgram(key: string, rpcUrl?: string) {
-  const connection = new Connection(rpcUrl || clusterApiUrl("mainnet-beta"), {
-    commitment: "confirmed",
+  const connection = new Connection(rpcUrl || clusterApiUrl('mainnet-beta'), {
+    commitment: 'confirmed',
   });
   try {
     const pk = new PublicKey(key);
@@ -17,7 +17,7 @@ export async function isProgram(key: string, rpcUrl?: string) {
 
       return false;
     }
-  } catch (err) {
+  } catch (_err) {
     return false;
   }
 }

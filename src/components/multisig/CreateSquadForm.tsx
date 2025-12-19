@@ -1,9 +1,15 @@
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Keypair, PublicKey } from '@solana/web3.js';
+import { CheckSquare, Copy, ExternalLink, PlusCircleIcon, XIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useMultisigAddress } from '@/hooks/useMultisigAddress';
+import { useMultisigData } from '@/hooks/useMultisigData';
+import { createMultisig, type Member } from '@/lib/createSquad';
+import { useSquadForm, type ValidationRules } from '@/lib/hooks/useSquadForm';
+import { isPublickey } from '@/lib/isPublickey';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Member, createMultisig } from '@/lib/createSquad';
-import { Keypair, PublicKey } from '@solana/web3.js';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { CheckSquare, Copy, ExternalLink, PlusCircleIcon, XIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -12,12 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { toast } from 'sonner';
-import { isPublickey } from '@/lib/isPublickey';
-import { ValidationRules, useSquadForm } from '@/lib/hooks/useSquadForm';
-import { useMultisigData } from '@/hooks/useMultisigData';
-import { useMultisigAddress } from '@/hooks/useMultisigAddress';
-import {Link} from "react-router-dom";
 
 interface MemberAddresses {
   count: number;
@@ -212,7 +212,7 @@ export default function CreateSquadForm({}: {}) {
             type="number"
             placeholder="Approval threshold for execution"
             defaultValue={formState.values.threshold}
-            onChange={(e) => handleChange('threshold', parseInt(e.target.value))}
+            onChange={(e) => handleChange('threshold', parseInt(e.target.value, 10))}
             className=""
           />
           {formState.errors.threshold && (
@@ -264,7 +264,7 @@ export default function CreateSquadForm({}: {}) {
                     <p className="font-semibold">
                       Squad Created:{' '}
                       <span className="font-normal">
-                        {res.multisig.slice(0, 4) + '...' + res.multisig.slice(-4)}
+                        {`${res.multisig.slice(0, 4)}...${res.multisig.slice(-4)}`}
                       </span>
                     </p>
                     <p className="font-light">Your new Squad has been set as active.</p>
@@ -327,7 +327,7 @@ function getValidationRules(): ValidationRules {
       );
 
       if (valid.includes('Invalid Member Key')) {
-        let index = valid.findIndex((v) => v === 'Invalid Member Key');
+        const index = valid.indexOf('Invalid Member Key');
         return `Member ${index + 1} is invalid`;
       }
 

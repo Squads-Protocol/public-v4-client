@@ -1,10 +1,9 @@
+import { ArrowRight, Sparkles, Users } from 'lucide-react';
 import { useState } from 'react';
-import { Users, ArrowRight, Sparkles } from 'lucide-react';
-
+import { useMultisigAddress } from '@/hooks/useMultisigAddress';
+import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { useMultisigAddress } from '@/hooks/useMultisigAddress';
 
 const MultisigInput = ({ onUpdate }: { onUpdate: () => void }) => {
   const { multisigAddress, setMultisigAddress } = useMultisigAddress();
@@ -27,7 +26,6 @@ const MultisigInput = ({ onUpdate }: { onUpdate: () => void }) => {
 
   return (
     <Card className="card-hover relative mx-auto max-w-xl overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/5" />
       <CardHeader className="relative text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <Users className="h-8 w-8 text-primary" />
@@ -52,8 +50,8 @@ const MultisigInput = ({ onUpdate }: { onUpdate: () => void }) => {
           </p>
         </div>
 
-        <Button 
-          onClick={onSubmit} 
+        <Button
+          onClick={onSubmit}
           className="w-full h-12 gap-2 text-base"
           disabled={isLoading || !multisig.trim()}
         >

@@ -1,10 +1,10 @@
-import { useCallback } from 'react';
-import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { PublicKey, Transaction, type TransactionInstruction } from '@solana/web3.js';
 import * as multisig from '@sqds/multisig';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { toast } from 'sonner';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { waitForConfirmation } from '@/lib/transactionConfirmation';
 
@@ -137,5 +137,3 @@ export function useTransactionAction() {
     executeAction,
   };
 }
-
-

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { useRpcUrl, useProgramId } from './useSettings';
+import { useProgramId, useRpcUrl } from './useSettings';
 
 const DEFAULT_VAULT_INDEX = 0; // Default when missing
 

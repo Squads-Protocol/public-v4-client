@@ -1,25 +1,35 @@
-import {
-  Home,
-  ArrowLeftRight,
-  Users,
-  Box,
-  Settings,
-  Github,
-  ExternalLink,
-  ChevronRight,
-  Wallet,
-  LogOut,
-  Copy,
-  Check,
-  Shuffle,
-  Moon,
-  Sun,
-} from 'lucide-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import {
+  ArrowLeftRight,
+  Box,
+  Check,
+  ChevronRight,
+  Copy,
+  ExternalLink,
+  Github,
+  Home,
+  LogOut,
+  Moon,
+  Settings,
+  Shuffle,
+  Sun,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import { useState } from 'react';
-
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Sidebar,
   SidebarContent,
@@ -35,52 +45,37 @@ import {
   SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMultisigAddress } from '@/hooks/useMultisigAddress';
 import { useMultisigData } from '@/hooks/useMultisigData';
-import { useTheme } from '@/hooks/useTheme';
 import { useMultisig } from '@/hooks/useServices';
+import { useTheme } from '@/hooks/useTheme';
 import { cn } from '~/lib/utils';
 
 const navItems = [
-  { 
-    name: 'Dashboard', 
-    icon: Home, 
+  {
+    name: 'Dashboard',
+    icon: Home,
     route: '/',
   },
-  { 
-    name: 'Transactions', 
-    icon: ArrowLeftRight, 
+  {
+    name: 'Transactions',
+    icon: ArrowLeftRight,
     route: '/transactions/',
   },
-  { 
-    name: 'Members', 
-    icon: Users, 
+  {
+    name: 'Members',
+    icon: Users,
     route: '/config/',
   },
-  { 
-    name: 'Programs', 
-    icon: Box, 
+  {
+    name: 'Programs',
+    icon: Box,
     route: '/programs/',
   },
-  { 
-    name: 'Settings', 
-    icon: Settings, 
+  {
+    name: 'Settings',
+    icon: Settings,
     route: '/settings/',
   },
 ];
@@ -122,7 +117,7 @@ function WalletSection() {
         </Tooltip>
       );
     }
-    
+
     return (
       <Button
         onClick={() => modal.setVisible(true)}
@@ -160,7 +155,11 @@ function WalletSection() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={copyAddress}>
-            {copied ? <Check className="mr-2 h-4 w-4 text-green-500" /> : <Copy className="mr-2 h-4 w-4" />}
+            {copied ? (
+              <Check className="mr-2 h-4 w-4 text-green-500" />
+            ) : (
+              <Copy className="mr-2 h-4 w-4" />
+            )}
             {copied ? 'Copied!' : 'Copy address'}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => modal.setVisible(true)}>
@@ -168,7 +167,10 @@ function WalletSection() {
             Change wallet
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={disconnect} className="text-destructive focus:text-destructive">
+          <DropdownMenuItem
+            onClick={disconnect}
+            className="text-destructive focus:text-destructive"
+          >
             <LogOut className="mr-2 h-4 w-4" />
             Disconnect
           </DropdownMenuItem>
@@ -180,8 +182,8 @@ function WalletSection() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="w-full justify-start gap-2 border-border/50 bg-sidebar-accent/50 hover:bg-sidebar-accent"
         >
           <Avatar className="h-6 w-6 shrink-0">
@@ -204,7 +206,11 @@ function WalletSection() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={copyAddress}>
-          {copied ? <Check className="mr-2 h-4 w-4 text-green-500" /> : <Copy className="mr-2 h-4 w-4" />}
+          {copied ? (
+            <Check className="mr-2 h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="mr-2 h-4 w-4" />
+          )}
           {copied ? 'Copied!' : 'Copy address'}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => modal.setVisible(true)}>
@@ -235,11 +241,7 @@ function ThemeToggle() {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">
@@ -250,12 +252,7 @@ function ThemeToggle() {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="w-full justify-start gap-2"
-      onClick={toggleTheme}
-    >
+    <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={toggleTheme}>
       {theme === 'dark' ? (
         <>
           <Sun className="h-4 w-4" />
@@ -290,10 +287,11 @@ function SquadSelector() {
       <Tooltip>
         <TooltipTrigger asChild>
           <button
+            type="button"
             onClick={handleSwitch}
-            className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/20 transition-colors hover:bg-primary/30"
+            className="flex h-8 w-8 items-center justify-center rounded-md bg-muted transition-colors hover:bg-accent"
           >
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-foreground" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="right">
@@ -305,20 +303,15 @@ function SquadSelector() {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-sidebar-accent/30 p-2">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/20">
-        <Users className="h-4 w-4 text-primary" />
+    <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-sidebar-accent/50 p-2">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+        <Users className="h-4 w-4 text-foreground" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[10px] text-muted-foreground">Active Squad</p>
         <p className="truncate font-mono text-xs">{truncateAddress(multisigAddress, 6)}</p>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 shrink-0"
-        onClick={handleSwitch}
-      >
+      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleSwitch}>
         <Shuffle className="h-3.5 w-3.5" />
       </Button>
     </div>
@@ -326,9 +319,9 @@ function SquadSelector() {
 }
 
 function usePendingCount() {
+  const { data: multisigConfig } = useMultisig();
+  if (!multisigConfig) return 0;
   try {
-    const { data: multisigConfig } = useMultisig();
-    if (!multisigConfig) return 0;
     const totalTx = Number(multisigConfig.transactionIndex);
     const staleTx = Number(multisigConfig.staleTransactionIndex);
     // Pending = transactions that are not stale yet
@@ -351,19 +344,50 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+    <Sidebar collapsible="icon">
       {/* Header with Logo */}
       <SidebarHeader className="border-b border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="Squads">
               <Link to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-primary/5">
-                  <img
-                    src="/logo.png"
-                    className="size-5 object-contain brightness-0 dark:invert"
-                    alt="Squads"
-                  />
+                <div
+                  className={cn(
+                    'flex items-center justify-center overflow-hidden transition-all duration-200',
+                    isCollapsed ? 'size-8' : 'h-8 w-auto px-2 rounded-lg bg-foreground'
+                  )}
+                >
+                  {/* Collapsed: Logomark icons (square) for proper alignment */}
+                  {isCollapsed ? (
+                    <>
+                      {/* Light mode: black logomark visible on light bg */}
+                      <img
+                        src="/logomark-black.png"
+                        className="size-8 object-contain dark:hidden"
+                        alt="Squads"
+                      />
+                      {/* Dark mode: white logomark visible on dark bg */}
+                      <img
+                        src="/logomark-white.png"
+                        className="size-8 object-contain hidden dark:block"
+                        alt="Squads"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* Expanded: Full wordmark logos */}
+                      <img
+                        src="/logo-white.png"
+                        className="h-5 w-auto object-contain dark:hidden"
+                        alt="Squads"
+                      />
+                      <img
+                        src="/logo-black.png"
+                        className="h-5 w-auto object-contain hidden dark:block"
+                        alt="Squads"
+                      />
+                    </>
+                  )}
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
                   <span className="font-semibold">Squads</span>
@@ -377,7 +401,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         {/* Squad Selector */}
-        <SidebarGroup className={cn(isCollapsed && "flex items-center justify-center")}>
+        <SidebarGroup className={cn(isCollapsed && 'flex items-center justify-center')}>
           <SquadSelector />
         </SidebarGroup>
 
@@ -450,10 +474,12 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* Footer with Theme Toggle and Wallet */}
-      <SidebarFooter className={cn(
-        "border-t border-sidebar-border space-y-2",
-        isCollapsed && "flex flex-col items-center justify-center"
-      )}>
+      <SidebarFooter
+        className={cn(
+          'border-t border-sidebar-border space-y-2',
+          isCollapsed && 'flex flex-col items-center justify-center'
+        )}
+      >
         <ThemeToggle />
         <WalletSection />
       </SidebarFooter>
@@ -462,5 +488,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
-
