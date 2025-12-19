@@ -4,65 +4,109 @@
 
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 222.2 84% 4.9%;
+        /* Vercel-inspired Dark Theme - Pure black/white minimalism */
+        --background: 0 0% 0%;
+        --foreground: 0 0% 98%;
 
-        --card: 0 0% 100%;
-        --card-foreground: 222.2 84% 4.9%;
+        --card: 0 0% 4%;
+        --card-foreground: 0 0% 98%;
 
-        --popover: 0 0% 100%;
-        --popover-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 4%;
+        --popover-foreground: 0 0% 98%;
 
-        --primary: 222.2 47.4% 11.2%;
-        --primary-foreground: 210 40% 98%;
+        /* Primary - Pure white for dark mode, clean and minimal */
+        --primary: 0 0% 98%;
+        --primary-foreground: 0 0% 0%;
 
-        --secondary: 210 40% 96.1%;
-        --secondary-foreground: 222.2 47.4% 11.2%;
+        --secondary: 0 0% 10%;
+        --secondary-foreground: 0 0% 98%;
 
-        --muted: 210 40% 96.1%;
-        --muted-foreground: 215.4 16.3% 46.9%;
+        --muted: 0 0% 10%;
+        --muted-foreground: 0 0% 55%;
 
-        --accent: 210 40% 96.1%;
-        --accent-foreground: 222.2 47.4% 11.2%;
+        --accent: 0 0% 14%;
+        --accent-foreground: 0 0% 98%;
 
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 210 40% 98%;
+        /* Semantic colors - kept minimal */
+        --success: 142 71% 45%;
+        --success-foreground: 0 0% 98%;
 
-        --border: 214.3 31.8% 91.4%;
-        --input: 214.3 31.8% 91.4%;
-        --ring: 222.2 84% 4.9%;
+        --warning: 38 92% 50%;
+        --warning-foreground: 0 0% 0%;
+
+        --destructive: 0 62% 55%;
+        --destructive-foreground: 0 0% 98%;
+
+        --border: 0 0% 14%;
+        --input: 0 0% 14%;
+        --ring: 0 0% 40%;
 
         --radius: 0.5rem;
+
+        /* Chart colors - monochrome with semantic accents */
+        --chart-1: 0 0% 98%;
+        --chart-2: 142 71% 45%;
+        --chart-3: 38 92% 50%;
+        --chart-4: 0 0% 70%;
+        --chart-5: 0 0% 50%;
+
+        /* Sidebar - matches app */
+        --sidebar-background: 0 0% 0%;
+        --sidebar-foreground: 0 0% 98%;
+        --sidebar-primary: 0 0% 98%;
+        --sidebar-primary-foreground: 0 0% 0%;
+        --sidebar-accent: 0 0% 10%;
+        --sidebar-accent-foreground: 0 0% 98%;
+        --sidebar-border: 0 0% 14%;
+        --sidebar-ring: 0 0% 40%;
     }
 
-    .dark {
-        --background: 222.2 84% 4.9%;
-        --foreground: 210 40% 98%;
+    .light {
+        /* Vercel-inspired Light Theme - Pure white, high contrast */
+        --background: 0 0% 100%;
+        --foreground: 0 0% 9%;
 
-        --card: 222.2 84% 4.9%;
-        --card-foreground: 210 40% 98%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 9%;
 
-        --popover: 222.2 84% 4.9%;
-        --popover-foreground: 210 40% 98%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 9%;
 
-        --primary: 210 40% 98%;
-        --primary-foreground: 222.2 47.4% 11.2%;
+        --primary: 0 0% 9%;
+        --primary-foreground: 0 0% 98%;
 
-        --secondary: 217.2 32.6% 17.5%;
-        --secondary-foreground: 210 40% 98%;
+        --secondary: 0 0% 96%;
+        --secondary-foreground: 0 0% 9%;
 
-        --muted: 217.2 32.6% 17.5%;
-        --muted-foreground: 215 20.2% 65.1%;
+        --muted: 0 0% 96%;
+        --muted-foreground: 0 0% 40%;
 
-        --accent: 217.2 32.6% 17.5%;
-        --accent-foreground: 210 40% 98%;
+        --accent: 0 0% 96%;
+        --accent-foreground: 0 0% 9%;
 
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 210 40% 98%;
+        --success: 142 71% 45%;
+        --success-foreground: 0 0% 98%;
 
-        --border: 217.2 32.6% 17.5%;
-        --input: 217.2 32.6% 17.5%;
-        --ring: 212.7 26.8% 83.9%;
+        --warning: 38 92% 50%;
+        --warning-foreground: 0 0% 9%;
+
+        --destructive: 0 62% 50%;
+        --destructive-foreground: 0 0% 98%;
+
+        /* Very subtle borders for light mode - clean Vercel style */
+        --border: 0 0% 94%;
+        --input: 0 0% 92%;
+        --ring: 0 0% 40%;
+
+        /* Sidebar - pure white, clean Vercel-style (no visible border) */
+        --sidebar-background: 0 0% 100%;
+        --sidebar-foreground: 0 0% 9%;
+        --sidebar-primary: 0 0% 9%;
+        --sidebar-primary-foreground: 0 0% 98%;
+        --sidebar-accent: 0 0% 96%;
+        --sidebar-accent-foreground: 0 0% 9%;
+        --sidebar-border: 0 0% 95%;
+        --sidebar-ring: 0 0% 40%;
     }
 }
 
@@ -70,7 +114,345 @@
     * {
         @apply border-border;
     }
+    
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground antialiased;
+        font-feature-settings: "rlig" 1, "calt" 1;
+    }
+    
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* Modern scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: hsl(var(--muted-foreground) / 0.2);
+        border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: hsl(var(--muted-foreground) / 0.4);
+    }
+}
+
+@layer utilities {
+    /* Glass morphism - subtle and clean */
+    .glass {
+        @apply bg-background/80 backdrop-blur-xl border border-border/50;
+    }
+
+    .glass-subtle {
+        @apply bg-card/90 backdrop-blur-md;
+    }
+
+    /* Card hover effects - minimal, Vercel-style */
+    .card-hover {
+        @apply transition-all duration-200 border border-border;
+    }
+
+    .card-hover:hover {
+        @apply border-foreground/20 bg-accent/50;
+    }
+
+    .card-interactive {
+        @apply transition-all duration-200 border border-border;
+    }
+
+    .card-interactive:hover {
+        @apply border-foreground/20 -translate-y-px;
+        box-shadow: 0 4px 12px hsl(0 0% 0% / 0.15);
+    }
+
+    .light .card-interactive:hover {
+        box-shadow: 0 4px 12px hsl(0 0% 0% / 0.08);
+    }
+
+    /* Active nav indicator - clean white bar */
+    .nav-active-indicator {
+        position: relative;
+    }
+
+    .nav-active-indicator::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 2px;
+        height: 50%;
+        background: hsl(var(--foreground));
+        border-radius: 1px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .nav-active-indicator[data-active="true"]::before {
+        opacity: 1;
+    }
+
+    /* Light mode card shadows - softer, more diffuse */
+    .light .card-hover:hover,
+    .light .stat-card:hover {
+        box-shadow: 0 2px 8px hsl(0 0% 0% / 0.04), 0 1px 2px hsl(0 0% 0% / 0.06);
+    }
+
+    /* Light mode icon containers need more contrast */
+    .light .icon-container {
+        background: hsl(var(--muted));
+    }
+
+    /* Light mode nav active indicator */
+    .light .nav-active-indicator[data-active="true"]::before {
+        background: hsl(var(--foreground));
+    }
+
+    /* Subtle animations */
+    .animate-pulse-slow {
+        animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .animate-shimmer {
+        animation: shimmer 2s linear infinite;
+        background: linear-gradient(
+            90deg,
+            hsl(var(--muted)) 0%,
+            hsl(var(--muted-foreground) / 0.1) 50%,
+            hsl(var(--muted)) 100%
+        );
+        background-size: 200% 100%;
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    /* Focus ring - clean and simple */
+    .focus-ring {
+        @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    }
+
+    /* Number displays - monospace for values */
+    .font-mono-numbers {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+    }
+
+    /* Status dot indicators - clean, no glow */
+    .status-dot {
+        @apply h-2 w-2 rounded-full;
+    }
+
+    .status-dot-success {
+        @apply bg-green-500;
+    }
+
+    .status-dot-warning {
+        @apply bg-amber-500;
+    }
+
+    .status-dot-error {
+        @apply bg-red-500;
+    }
+
+    .status-dot-pending {
+        @apply bg-neutral-400 animate-pulse;
+    }
+
+    /* Entrance animations */
+    .animate-in {
+        opacity: 0;
+        animation: animate-in 0.3s ease-out forwards;
+    }
+
+    .animate-in-delayed {
+        opacity: 0;
+        animation: animate-in 0.3s ease-out forwards;
+        animation-delay: 0.1s;
+    }
+
+    @keyframes animate-in {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Page transition animations */
+    .page-transition {
+        animation: page-enter 0.3s ease-out;
+    }
+
+    @keyframes page-enter {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Fade-only variant for simpler transitions */
+    .fade-in {
+        animation: fade-in 0.2s ease-out;
+    }
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Staggered entrance for lists */
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+    .stagger-5 { animation-delay: 0.25s; }
+    .stagger-6 { animation-delay: 0.3s; }
+
+    /* Shimmer loading - subtle */
+    .shimmer-loading {
+        position: relative;
+        overflow: hidden;
+        background: hsl(var(--muted));
+    }
+
+    .shimmer-loading::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(
+            90deg,
+            transparent,
+            hsl(var(--foreground) / 0.03),
+            transparent
+        );
+        animation: shimmer-slide 1.5s infinite;
+    }
+
+    @keyframes shimmer-slide {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    /* Glass cards - minimal */
+    .glass-card {
+        @apply bg-card/90 backdrop-blur-xl border border-border;
+    }
+
+    .glass-elevated {
+        @apply bg-card backdrop-blur-2xl border border-border;
+        box-shadow: 0 4px 16px hsl(0 0% 0% / 0.2);
+    }
+
+    .light .glass-elevated {
+        box-shadow: 0 4px 16px hsl(0 0% 0% / 0.06);
+    }
+
+    /* Subtle pulse for active states */
+    .pulse-subtle {
+        animation: pulse-subtle 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-subtle {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+    }
+
+    /* Progress bar - clean monochrome */
+    .progress-gradient {
+        background: hsl(var(--foreground));
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .animate-in,
+        .animate-in-delayed,
+        .shimmer-loading::after,
+        .pulse-subtle {
+            animation: none;
+        }
+
+        .animate-in,
+        .animate-in-delayed {
+            opacity: 1;
+            transform: none;
+        }
+    }
+}
+
+/* Custom component styles */
+@layer components {
+    /* Stat card styling - clean, minimal */
+    .stat-card {
+        @apply relative overflow-hidden rounded-lg border border-border bg-card p-6 transition-all duration-200;
+    }
+
+    .stat-card:hover {
+        @apply border-foreground/20;
+    }
+
+    /* Data table styling */
+    .data-table {
+        @apply w-full border-separate border-spacing-0;
+    }
+
+    .data-table th {
+        @apply border-b border-border bg-muted/50 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground;
+    }
+
+    .data-table td {
+        @apply border-b border-border/50 px-4 py-4 text-sm;
+    }
+
+    .data-table tbody tr {
+        @apply transition-colors hover:bg-accent/50;
+    }
+
+    /* Action button group */
+    .action-group {
+        @apply flex items-center gap-1;
+    }
+
+    .action-group > button {
+        @apply h-8 w-8 rounded-md p-0;
+    }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    }
+  body {
+    @apply bg-background text-foreground;
     }
 }

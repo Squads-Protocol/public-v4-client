@@ -1,17 +1,16 @@
 'use client';
-import * as multisig from '@sqds/multisig';
+import type { WalletContextState } from '@solana/wallet-adapter-react';
 import {
-  Connection,
+  type Connection,
   PublicKey,
   TransactionMessage,
-  VersionedMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { decodeAndDeserialize } from './decodeAndDeserialize';
-import { WalletContextState } from '@solana/wallet-adapter-react';
+import * as multisig from '@sqds/multisig';
 import { toast } from 'sonner';
-import { loadLookupTables } from './getAccountsForSimulation';
 import { waitForConfirmation } from '~/lib/transactionConfirmation';
+import { decodeAndDeserialize } from './decodeAndDeserialize';
+import { loadLookupTables } from './getAccountsForSimulation';
 
 export const importTransaction = async (
   tx: string,
@@ -28,7 +27,7 @@ export const importTransaction = async (
     const { message, version } = decodeAndDeserialize(tx);
 
     const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-      // @ts-ignore
+      // @ts-expect-error
       connection,
       new PublicKey(multisigPda)
     );
@@ -47,7 +46,7 @@ export const importTransaction = async (
       multisigPda: new PublicKey(multisigPda),
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      // @ts-ignore
+      // @ts-expect-error
       transactionMessage: transactionMessage,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts,

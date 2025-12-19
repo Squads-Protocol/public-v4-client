@@ -1,27 +1,24 @@
-# Use a minimal base image
-FROM node:20-alpine AS builder
+# Use Bun as the builder
+FROM oven/bun:1 AS builder
 
 # Set working directory
 WORKDIR /app
-
-# Enable Yarn (since corepack is built-in with Node.js 20)
-RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 # Ensure consistent timestamps for deterministic builds
 ENV NODE_ENV=production
 ENV SOURCE_DATE_EPOCH=315532800
 
 # Copy dependencies first (for better caching)
-COPY package.json yarn.lock ./
+COPY package.json bun.lock ./
 
 # Install dependencies in a reproducible way
-RUN yarn install --frozen-lockfile --non-interactive --check-files --ignore-scripts
+RUN bun install --frozen-lockfile
 
 # Copy the full source code after dependencies are cached
 COPY . .
 
-# Build the application using Webpack
-RUN yarn build
+# Build the application using Vite
+RUN bun run build
 
 # Ensure consistent timestamps for all files in dist/
 RUN find dist -exec touch -d @${SOURCE_DATE_EPOCH} {} + && \

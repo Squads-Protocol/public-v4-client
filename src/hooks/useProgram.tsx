@@ -1,7 +1,12 @@
-import { useMultisigData } from './useMultisigData';
+import {
+  type AccountInfo,
+  type ParsedAccountData,
+  PublicKey,
+  type RpcResponseAndContext,
+} from '@solana/web3.js';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { AccountInfo, ParsedAccountData, PublicKey, RpcResponseAndContext } from '@solana/web3.js';
 import invariant from 'invariant';
+import { useMultisigData } from './useMultisigData';
 
 export interface SimplifiedProgramInfo {
   programAddress: string;
@@ -16,7 +21,7 @@ export const useProgram = (managedProgramId: string | null) => {
     account: RpcResponseAndContext<AccountInfo<Buffer | ParsedAccountData> | null>
   ) => {
     const { value } = account;
-    if (value && value.data && 'parsed' in value.data) {
+    if (value?.data && 'parsed' in value.data) {
       const {
         data: { parsed },
       } = value;
@@ -51,7 +56,7 @@ export const useProgram = (managedProgramId: string | null) => {
           programDataAddress: programInfos.programParsed.info.programData,
           authority: programInfos.programDataParsed.info.authority,
         };
-      } catch (error) {
+      } catch (_error) {
         return null;
       }
     },

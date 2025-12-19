@@ -1,7 +1,7 @@
+import type { PublicKey } from '@solana/web3.js';
+import { types as multisigTypes } from '@sqds/multisig';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { types as multisigTypes } from '@sqds/multisig';
-import { PublicKey } from '@solana/web3.js';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

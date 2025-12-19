@@ -1,0 +1,56 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn",
+        "noEmptyPattern": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "warn",
+        "noImplicitAnyLet": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "a11y": {
+        "useButtonType": "warn",
+        "noLabelWithoutControl": "warn",
+        "useFocusableInteractive": "warn",
+        "useSemanticElements": "warn"
+      },
+      "complexity": {
+        "noBannedTypes": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "es5",
+      "semicolons": "always"
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": true
+    },
+    "linter": {
+      "enabled": false
+    }
+  },
+  "files": {
+    "includes": ["**", "!**/node_modules", "!**/dist", "!**/.vite", "!**/*.lock", "!**/*.css"]
+  }
+}

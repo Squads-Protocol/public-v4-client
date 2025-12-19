@@ -1,0 +1,31 @@
+# Dependencies - will be installed fresh in container
+node_modules/
+
+# Build output - will be generated fresh
+dist/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Development/local files
+.cursor/
+.claude/
+*.log
+
+# Test and verification directories
+squads-public-verify/
+
+# Documentation (not needed for build)
+*.md
+!README.md
+
+# Scripts (optional, but keep for hash verification)
+# scripts/

@@ -1,63 +1,95 @@
-import React, { Suspense } from 'react';
-import { Wallet } from './components/Wallet';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { QueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CheckSquare } from 'lucide-react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type React from 'react';
+import { Suspense } from 'react';
+import { HashRouter, Route, Routes } from 'react-router-dom';
+import { AppBreadcrumb } from './components/layout/AppBreadcrumb';
+import { AppSidebar } from './components/layout/AppSidebar';
+import { CommandPalette } from './components/layout/CommandPalette';
+import { PageSkeleton } from './components/layout/PageSkeleton';
+import { PageTransition } from './components/layout/PageTransition';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from './components/ui/sidebar';
 import { Toaster } from './components/ui/sonner';
-import TabNav from './components/TabNav';
-
+import { Wallet } from './components/wallet/Wallet';
+import { ThemeProvider } from './hooks/useTheme';
 import HomePage from './routes/_index';
 import ConfigPage from './routes/config';
 import CreatePage from './routes/create';
+import ProgramsPage from './routes/programs';
 import SettingsPage from './routes/settings';
 import TransactionsPage from './routes/transactions';
-import ProgramsPage from './routes/programs';
-import { Routes, Route, HashRouter } from 'react-router-dom';
 
-import './styles/global.css'; // ✅ Load Tailwind styles
-import { ErrorBoundary } from './components/ErrorBoundary';
+import './styles/global.css';
+import { ErrorBoundary } from './components/layout/ErrorBoundary';
+import { Separator } from './components/ui/separator';
+
+const queryClient = new QueryClient();
+
+const LoadingFallback = () => <PageSkeleton />;
+
+const PageHeader = ({ children }: { children?: React.ReactNode }) => (
+  <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border/40 bg-background/95 px-4 backdrop-blur-lg backdrop-saturate-150 supports-[backdrop-filter]:bg-background/60">
+    <SidebarTrigger className="-ml-1" />
+    <Separator orientation="vertical" className="mr-2 h-4" />
+    <AppBreadcrumb />
+    {children}
+    <div className="ml-auto flex items-center gap-2">
+      <kbd className="pointer-events-none hidden h-6 select-none items-center gap-1 rounded border border-border/50 bg-muted px-2 font-mono text-[10px] font-medium text-muted-foreground opacity-100 sm:flex">
+        <span className="text-xs">⌘</span>K
+      </kbd>
+    </div>
+  </header>
+);
 
 const App = () => {
-  const queryClient = new QueryClient();
-
-  // @ts-ignore
   return (
-    <QueryClientProvider client={queryClient}>
-      <Wallet>
-        <HashRouter>
-          <div className="flex h-screen min-w-full flex-col bg-white md:flex-row">
-            <Suspense>
-              <TabNav />
-            </Suspense>
-            <div className="mt-1 space-y-2 p-3 pb-24 pt-4 md:ml-auto md:w-9/12 md:space-y-4 md:p-8 md:pt-6">
-              <ErrorBoundary>
-                <Suspense fallback={<p>Loading...</p>}>
-                  <Routes>
-                    <Route index path="/" element={<HomePage />} />
-                    <Route path="/config" element={<ConfigPage />} />
-                    <Route path="/create" element={<CreatePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/transactions" element={<TransactionsPage />} />
-                    <Route path="/programs" element={<ProgramsPage />} />
-                    <Route path="*" element={<p>404 - Not Found</p>} /> {/* Catch-all route */}
-                  </Routes>
-                </Suspense>
-              </ErrorBoundary>
-            </div>
-          </div>
+    <ThemeProvider defaultTheme="dark" storageKey="squads-ui-theme">
+      <QueryClientProvider client={queryClient}>
+        <Wallet>
+          <HashRouter>
+            <SidebarProvider>
+              <AppSidebar />
+              <SidebarInset>
+                <PageHeader />
+                <main className="flex-1 overflow-auto">
+                  <div className="mx-auto max-w-6xl space-y-6 p-6">
+                    <ErrorBoundary>
+                      <Suspense fallback={<LoadingFallback />}>
+                        <PageTransition>
+                          <Routes>
+                            <Route index path="/" element={<HomePage />} />
+                            <Route path="/config" element={<ConfigPage />} />
+                            <Route path="/create" element={<CreatePage />} />
+                            <Route path="/settings" element={<SettingsPage />} />
+                            <Route path="/transactions" element={<TransactionsPage />} />
+                            <Route path="/programs" element={<ProgramsPage />} />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </PageTransition>
+                      </Suspense>
+                    </ErrorBoundary>
+                  </div>
+                </main>
+              </SidebarInset>
+            </SidebarProvider>
 
-          <Toaster
-            expand
-            visibleToasts={3}
-            icons={{
-              error: <AlertTriangle className="h-4 w-4 text-red-600" />,
-              success: <CheckSquare className="h-4 w-4 text-green-600" />,
-            }}
-          />
-        </HashRouter>
-      </Wallet>
-    </QueryClientProvider>
+            <CommandPalette />
+
+            <Toaster position="bottom-right" expand richColors closeButton visibleToasts={4} />
+          </HashRouter>
+        </Wallet>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
+
+const NotFound = () => (
+  <div className="flex flex-col items-center justify-center py-20">
+    <div className="rounded-full bg-muted p-6">
+      <span className="text-4xl">🔍</span>
+    </div>
+    <h1 className="mt-6 text-4xl font-bold">404</h1>
+    <p className="mt-2 text-muted-foreground">Page not found</p>
+  </div>
+);
 
 export default App;

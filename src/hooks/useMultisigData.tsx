@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
-import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
-import { useRpcUrl, useProgramId } from './useSettings';
-import { useVaultIndex } from './useVaultIndex';
-import { useMultisigAddress } from './useMultisigAddress';
+import { Connection, clusterApiUrl, PublicKey } from '@solana/web3.js';
 import * as multisig from '@sqds/multisig';
+import { useMemo } from 'react';
+import { useMultisigAddress } from './useMultisigAddress';
+import { useProgramId, useRpcUrl } from './useSettings';
+import { useVaultIndex } from './useVaultIndex';
 
 export const useMultisigData = () => {
   // Fetch settings from React Query hooks
