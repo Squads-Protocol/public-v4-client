@@ -29,10 +29,9 @@ export async function createMultisig(
     });
 
       const programConfigInfo = await multisig.accounts.ProgramConfig.fromAccountAddress(
-          // @ts-ignore
-      connection,
-      programConfig
-    );
+        connection as any,
+        programConfig
+      );
 
     const configTreasury = programConfigInfo.treasury;
 

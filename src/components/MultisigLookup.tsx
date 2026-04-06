@@ -101,7 +101,6 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
 
       setSearching(false);
     } catch (e) {
-      console.error(e);
       setSearching(false);
       throw e;
     }
@@ -192,7 +191,6 @@ const processTransaction = async (
       // check previous state first to see if we already have it
       const alreadyCheckedState = altArgsArray.find((preAltArg) => preAltArg.key.equals(altPubkey));
       if (!alreadyCheckedState) {
-        console.log('we dont have alt for this address, fetching', altPubkey);
         const altState = await connection.getAddressLookupTable(altPubkey);
         if (altState.value) {
           altArgsArray.push({

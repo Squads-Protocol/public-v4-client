@@ -19,6 +19,7 @@ import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
+import { buildProposalAndApproveIx } from '../lib/multisigUtils';
 
 type CreateProgramUpgradeInputProps = {
   programInfos: SimplifiedProgramInfo;
@@ -114,28 +115,19 @@ const CreateProgramUpgradeInput = ({
       multisigPda,
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      // @ts-ignore
-      transactionMessage,
+      transactionMessage: transactionMessage as any,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
       rentPayer: wallet.publicKey,
       vaultIndex: vaultIndex,
       programId,
     });
-    const proposalIx = multisig.instructions.proposalCreate({
+    const [proposalIx, approveIx] = buildProposalAndApproveIx(
       multisigPda,
-      creator: wallet.publicKey,
-      isDraft: false,
-      transactionIndex: bigIntTransactionIndex,
-      rentPayer: wallet.publicKey,
-      programId,
-    });
-    const approveIx = multisig.instructions.proposalApprove({
-      multisigPda,
-      member: wallet.publicKey,
-      transactionIndex: bigIntTransactionIndex,
-      programId,
-    });
+      wallet.publicKey,
+      bigIntTransactionIndex,
+      programId
+    );
 
     const message = new TransactionMessage({
       instructions: [multisigTransactionIx, proposalIx, approveIx],
@@ -148,7 +140,6 @@ const CreateProgramUpgradeInput = ({
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    console.log('Transaction signature', signature);
     toast.loading('Confirming...', {
       id: 'transaction',
     });

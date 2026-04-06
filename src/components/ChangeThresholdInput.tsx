@@ -12,6 +12,7 @@ import { types as multisigTypes } from '@sqds/multisig';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMultisigData } from '../hooks/useMultisigData';
+import { buildProposalAndApproveIx } from '../lib/multisigUtils';
 
 type ChangeThresholdInputProps = {
   multisigPda: string;
@@ -71,20 +72,12 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
       rentPayer: wallet.publicKey,
       programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
-    const proposalIx = multisig.instructions.proposalCreate({
-      multisigPda: new PublicKey(multisigPda),
-      creator: wallet.publicKey,
-      isDraft: false,
-      transactionIndex: bigIntTransactionIndex,
-      rentPayer: wallet.publicKey,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
-    const approveIx = multisig.instructions.proposalApprove({
-      multisigPda: new PublicKey(multisigPda),
-      member: wallet.publicKey,
-      transactionIndex: bigIntTransactionIndex,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
+    const [proposalIx, approveIx] = buildProposalAndApproveIx(
+      new PublicKey(multisigPda),
+      wallet.publicKey,
+      bigIntTransactionIndex,
+      programId
+    );
 
     const message = new TransactionMessage({
       instructions: [changeThresholdIx, proposalIx, approveIx],
@@ -97,7 +90,6 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    console.log('Transaction signature', signature);
     toast.loading('Confirming...', {
       id: 'transaction',
     });

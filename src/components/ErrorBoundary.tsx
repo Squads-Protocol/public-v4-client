@@ -1,4 +1,4 @@
-import { Component, ReactNode } from 'react';
+import React, { Component, ReactNode } from 'react';
 import { Button } from './ui/button';
 import SetRpcUrlnput from './SetRpcUrlnput';
 import { Card, CardContent, CardTitle } from './ui/card';
@@ -24,8 +24,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true, error, rpcUpdated: false };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('🛑 React Error Boundary caught an error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    void error;
+    void errorInfo;
   }
 
   resetError = () => {

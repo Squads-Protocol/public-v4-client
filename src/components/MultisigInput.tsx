@@ -11,8 +11,6 @@ const MultisigInput = ({ onUpdate }: { onUpdate: () => void }) => {
     if (multisig.trim().length > 0) {
       await setMultisigAddress.mutateAsync(multisig); // Save using React Query
       onUpdate(); // Trigger any additional UI updates
-    } else {
-      console.error('Multisig address cannot be empty.');
     }
   };
 

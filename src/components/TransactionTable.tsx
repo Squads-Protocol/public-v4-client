@@ -12,6 +12,7 @@ interface ActionButtonsProps {
   transactionIndex: number;
   proposalStatus: string;
   programId: string;
+  isStale: boolean;
 }
 
 export default function TransactionTable({
@@ -60,16 +61,13 @@ export default function TransactionTable({
               {stale ? '(stale)' : transaction.proposal?.status.__kind || 'None'}
             </TableCell>
             <TableCell>
-              {!stale ? (
-                <ActionButtons
-                  multisigPda={multisigPda!}
-                  transactionIndex={Number(transaction.index)}
-                  proposalStatus={transaction.proposal?.status.__kind || 'None'}
-                  programId={programId ? programId : multisig.PROGRAM_ID.toBase58()}
-                />
-              ) : (
-                <span>Stale</span>
-              )}
+              <ActionButtons
+                multisigPda={multisigPda!}
+                transactionIndex={Number(transaction.index)}
+                proposalStatus={transaction.proposal?.status.__kind || 'None'}
+                programId={programId ? programId : multisig.PROGRAM_ID.toBase58()}
+                isStale={stale}
+              />
             </TableCell>
           </TableRow>
         );
@@ -83,6 +81,7 @@ function ActionButtons({
   transactionIndex,
   proposalStatus,
   programId,
+  isStale,
 }: ActionButtonsProps) {
   return (
     <>
@@ -91,18 +90,21 @@ function ActionButtons({
         transactionIndex={transactionIndex}
         proposalStatus={proposalStatus}
         programId={programId}
+        isStale={isStale}
       />
       <RejectButton
         multisigPda={multisigPda}
         transactionIndex={transactionIndex}
         proposalStatus={proposalStatus}
         programId={programId}
+        isStale={isStale}
       />
       <ExecuteButton
         multisigPda={multisigPda}
         transactionIndex={transactionIndex}
         proposalStatus={proposalStatus}
         programId={programId}
+        isStale={isStale}
       />
     </>
   );

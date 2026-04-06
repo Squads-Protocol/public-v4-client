@@ -67,7 +67,7 @@ const getExplorerUrl = () => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('x-explorer-url') || DEFAULT_EXPLORER_URL;
   }
-  return DEFAULT_PROGRAM_ID;
+  return DEFAULT_EXPLORER_URL;
 };
 
 export const useExplorerUrl = () => {

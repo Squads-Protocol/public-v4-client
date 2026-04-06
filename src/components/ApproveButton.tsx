@@ -1,6 +1,7 @@
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { Button } from './ui/button';
 import * as multisig from '@sqds/multisig';
+import { useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { toast } from 'sonner';
@@ -13,6 +14,7 @@ type ApproveButtonProps = {
   transactionIndex: number;
   proposalStatus: string;
   programId: string;
+  isStale: boolean;
 };
 
 const ApproveButton = ({
@@ -20,13 +22,15 @@ const ApproveButton = ({
   transactionIndex,
   proposalStatus,
   programId,
+  isStale,
 }: ApproveButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const validKinds = ['Rejected', 'Approved', 'Executing', 'Executed', 'Cancelled'];
-  const isKindValid = validKinds.includes(proposalStatus || 'None');
+  const terminalStatuses = ['Rejected', 'Approved', 'Executing', 'Executed', 'Cancelled'];
+  const isDisabled = isStale || terminalStatuses.includes(proposalStatus || 'None');
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
+  const signatureRef = useRef<string>('');
 
   const approveProposal = async () => {
     if (!wallet.publicKey) {
@@ -65,7 +69,10 @@ const ApproveButton = ({
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    console.log('Transaction signature', signature);
+    signatureRef.current = signature;
+    toast.info(`Sending ${signature}`, {
+      duration: Infinity,
+    });
     toast.loading('Confirming...', {
       id: 'transaction',
     });
@@ -77,13 +84,13 @@ const ApproveButton = ({
   };
   return (
     <Button
-      disabled={isKindValid}
+      disabled={isDisabled}
       onClick={() =>
         toast.promise(approveProposal, {
           id: 'transaction',
           loading: 'Loading...',
           success: 'Transaction approved.',
-          error: (e) => `Failed to approve: ${e}`,
+          error: (e) => `Failed to approve: ${e}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
         })
       }
       className="mr-2"

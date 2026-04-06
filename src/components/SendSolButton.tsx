@@ -25,6 +25,7 @@ import { useMultisigData } from '~/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAccess } from '../hooks/useAccess';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
+import { buildProposalAndApproveIx } from '~/lib/multisigUtils';
 
 type SendSolProps = {
   multisigPda: string;
@@ -62,8 +63,7 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
     });
 
     const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-      // @ts-ignore
-      connection,
+      connection as any,
       new PublicKey(multisigPda)
     );
 
@@ -82,28 +82,19 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
       multisigPda: new PublicKey(multisigPda),
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      // @ts-ignore
-      transactionMessage: transferMessage,
+      transactionMessage: transferMessage as any,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
       rentPayer: wallet.publicKey,
       vaultIndex: vaultIndex,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+      programId,
     });
-    const proposalIx = multisig.instructions.proposalCreate({
-      multisigPda: new PublicKey(multisigPda),
-      creator: wallet.publicKey,
-      isDraft: false,
-      transactionIndex: transactionIndexBN,
-      rentPayer: wallet.publicKey,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
-    const approveIx = multisig.instructions.proposalApprove({
-      multisigPda: new PublicKey(multisigPda),
-      member: wallet.publicKey,
-      transactionIndex: transactionIndexBN,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
+    const [proposalIx, approveIx] = buildProposalAndApproveIx(
+      new PublicKey(multisigPda),
+      wallet.publicKey,
+      transactionIndexBN,
+      programId
+    );
 
     const message = new TransactionMessage({
       instructions: [multisigTransactionIx, proposalIx, approveIx],
@@ -116,7 +107,6 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    console.log('Transaction signature', signature);
     toast.loading('Confirming...', {
       id: 'transaction',
     });
