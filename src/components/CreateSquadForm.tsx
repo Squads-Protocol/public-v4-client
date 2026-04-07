@@ -18,6 +18,7 @@ import { ValidationRules, useSquadForm } from '@/lib/hooks/useSquadForm';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useMultisigAddress } from '@/hooks/useMultisigAddress';
 import {Link} from "react-router-dom";
+import { waitForConfirmation } from '@/lib/transactionConfirmation';
 
 interface MemberAddresses {
   count: number;
@@ -81,17 +82,9 @@ export default function CreateSquadForm({}: {}) {
         id: 'create',
       });
 
-      let sent = false;
-      const maxAttempts = 10;
-      const delayMs = 1000;
-      for (let attempt = 0; attempt <= maxAttempts && !sent; attempt++) {
-        const status = await connection.getSignatureStatus(signature);
-        if (status?.value?.confirmationStatus === 'confirmed') {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-          sent = true;
-        } else {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
+      const [confirmed] = await waitForConfirmation(connection, [signature]);
+      if (!confirmed) {
+        throw `Transaction failed or timed out. Check ${signature}`;
       }
 
       setMultisigAddress.mutate(multisig.toBase58());
