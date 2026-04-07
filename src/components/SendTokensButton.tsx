@@ -102,7 +102,7 @@ const SendTokens = ({
     );
 
     const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-      connection as any,
+      connection,
       new PublicKey(multisigPda)
     );
 
@@ -122,7 +122,7 @@ const SendTokens = ({
       multisigPda: new PublicKey(multisigPda),
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      transactionMessage: transferMessage as any,
+      transactionMessage: transferMessage,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
       rentPayer: wallet.publicKey,

@@ -29,7 +29,7 @@ export async function createMultisig(
     });
 
       const programConfigInfo = await multisig.accounts.ProgramConfig.fromAccountAddress(
-        connection as any,
+        connection,
         programConfig
       );
 
@@ -39,7 +39,7 @@ export async function createMultisig(
       multisigPda: multisigPda,
       createKey: createKey,
       creator: user,
-      members: members as any,
+      members: members.filter((m): m is multisig.generated.Member => m.key !== null),
       threshold: threshold,
       configAuthority: configAuthority ? new PublicKey(configAuthority) : null,
       treasury: configTreasury,

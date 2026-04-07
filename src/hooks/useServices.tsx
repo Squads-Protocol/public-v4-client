@@ -16,7 +16,7 @@ export const useMultisig = () => {
       if (!multisigAddress) return null;
       try {
         const multisigPubkey = new PublicKey(multisigAddress);
-        return multisig.accounts.Multisig.fromAccountAddress(connection as any, multisigPubkey);
+        return multisig.accounts.Multisig.fromAccountAddress(connection, multisigPubkey);
       } catch (error) {
         return null;
       }
@@ -82,7 +82,7 @@ async function fetchTransactionData(
 
   let proposal;
   try {
-    proposal = await multisig.accounts.Proposal.fromAccountAddress(connection as any, proposalPda[0]);
+    proposal = await multisig.accounts.Proposal.fromAccountAddress(connection, proposalPda[0]);
   } catch (error) {
     proposal = null;
   }

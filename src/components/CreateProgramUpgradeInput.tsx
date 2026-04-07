@@ -115,7 +115,7 @@ const CreateProgramUpgradeInput = ({
       multisigPda,
       creator: wallet.publicKey,
       ephemeralSigners: 0,
-      transactionMessage: transactionMessage as any,
+      transactionMessage: transactionMessage,
       transactionIndex: transactionIndexBN,
       addressLookupTableAccounts: [],
       rentPayer: wallet.publicKey,

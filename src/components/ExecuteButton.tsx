@@ -78,14 +78,14 @@ const ExecuteButton = ({
     let txData;
     let txType;
     try {
-      await multisig.accounts.VaultTransaction.fromAccountAddress(connection as any, transactionPda);
+      await multisig.accounts.VaultTransaction.fromAccountAddress(connection, transactionPda);
       txType = 'vault';
     } catch (error) {
       try {
-        await multisig.accounts.ConfigTransaction.fromAccountAddress(connection as any, transactionPda);
+        await multisig.accounts.ConfigTransaction.fromAccountAddress(connection, transactionPda);
         txType = 'config';
       } catch (e) {
-        txData = await multisig.accounts.Batch.fromAccountAddress(connection as any, transactionPda);
+        txData = await multisig.accounts.Batch.fromAccountAddress(connection, transactionPda);
         txType = 'batch';
       }
     }
@@ -104,7 +104,7 @@ const ExecuteButton = ({
     if (txType == 'vault') {
       const resp = await multisig.instructions.vaultTransactionExecute({
         multisigPda: new PublicKey(multisigPda),
-        connection: connection as any,
+        connection,
         member,
         transactionIndex: bigIntTransactionIndex,
         programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
@@ -150,7 +150,7 @@ const ExecuteButton = ({
           range(executedBatchIndex + 1, batchSize).map(async (batchIndex) => {
             const { instruction: transactionExecuteIx, lookupTableAccounts } =
               await multisig.instructions.batchExecuteTransaction({
-                connection: connection as any,
+                connection,
                 member,
                 batchIndex: bigIntTransactionIndex,
                 transactionIndex: batchIndex,
