@@ -172,23 +172,23 @@ const ExecuteButton = ({
 
     const signedTransactions = await wallet.signAllTransactions(transactions);
 
-    let signatures = [];
-    for (const signedTx of signedTransactions) {
-      const signature = await connection.sendRawTransaction(signedTx.serialize(), {
+    const signatures: string[] = [];
+    for (let i = 0; i < signedTransactions.length; i++) {
+      const label =
+        signedTransactions.length > 1 ? ` (${i + 1}/${signedTransactions.length})` : '';
+
+      const signature = await connection.sendRawTransaction(signedTransactions[i].serialize(), {
         skipPreflight: true,
       });
       signatures.push(signature);
       signaturesRef.current.push(signature);
-      toast.info(`Sending ${signature}`, {
-        duration: Infinity,
-      });
-      toast.loading('Confirming...', {
-        id: 'transaction',
-      });
-    }
-    const sent = await waitForConfirmation(connection, signatures);
-    if (!sent.every((sent) => !!sent)) {
-      throw `Unable to confirm`;
+
+      toast.loading(`Confirming${label}...`, { id: 'transaction' });
+
+      const [confirmed] = await waitForConfirmation(connection, [signature]);
+      if (!confirmed) {
+        throw `Transaction${label} failed or timed out. Check ${signature}`;
+      }
     }
     closeDialog();
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
