@@ -14,13 +14,12 @@ import TransactionsPage from './routes/transactions';
 import ProgramsPage from './routes/programs';
 import { Routes, Route, HashRouter } from 'react-router-dom';
 
-import './styles/global.css'; // ✅ Load Tailwind styles
+import './styles/global.css'; // Load Tailwind styles
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App = () => {
   const queryClient = new QueryClient();
 
-  // @ts-ignore
   return (
     <QueryClientProvider client={queryClient}>
       <Wallet>
@@ -48,6 +47,7 @@ const App = () => {
 
           <Toaster
             expand
+            closeButton
             visibleToasts={3}
             icons={{
               error: <AlertTriangle className="h-4 w-4 text-red-600" />,

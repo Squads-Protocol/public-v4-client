@@ -1,14 +1,15 @@
 "use client";
 import { useCallback, useState } from "react";
+import type { MouseEvent } from "react";
 
 type SubmitHandler<T> = () => Promise<T>;
 
 export interface FormValues {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type ValidationErrors = Record<string, string>;
-export type ValidationFunction = (value: any) => Promise<string | null>;
+export type ValidationFunction = (value: unknown) => Promise<string | null>;
 export interface ValidationRules {
   [key: string]: ValidationFunction;
 }
@@ -32,7 +33,7 @@ export function useSquadForm<T>(
   });
 
   const validateField = useCallback(
-    async (field: string, value: any) => {
+    async (field: string, value: unknown) => {
       if (validationRules[field]) {
         const error = await validationRules[field](value);
         return error;
@@ -43,7 +44,7 @@ export function useSquadForm<T>(
   );
 
   const handleChange = useCallback(
-    async (field: string, value: any) => {
+    async (field: string, value: unknown) => {
       setFormState((prev) => ({
         ...prev,
         isLoading: true,
@@ -67,18 +68,14 @@ export function useSquadForm<T>(
     [validateField]
   );
 
-  const handleAddMember = (e: any) => {
+  const handleAddMember = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    const current = formState.values.members as { count: number; memberData: unknown[] };
     handleChange("members", {
-      count: formState.values.members.count + 1,
+      count: current.count + 1,
       memberData: [
-        ...formState.values.members.memberData,
-        {
-          key: null,
-          permissions: {
-            mask: 0,
-          },
-        },
+        ...current.memberData,
+        { key: null, permissions: { mask: 0 } },
       ],
     });
   };
@@ -90,8 +87,7 @@ export function useSquadForm<T>(
     }));
     try {
       return await handler();
-    } catch (error: any) {
-      console.error(error);
+    } catch (error: unknown) {
       throw error;
     } finally {
       setFormState((prev) => ({

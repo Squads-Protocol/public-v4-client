@@ -18,6 +18,7 @@ import { ValidationRules, useSquadForm } from '@/lib/hooks/useSquadForm';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useMultisigAddress } from '@/hooks/useMultisigAddress';
 import {Link} from "react-router-dom";
+import { waitForConfirmation } from '@/lib/transactionConfirmation';
 
 interface MemberAddresses {
   count: number;
@@ -58,17 +59,18 @@ export default function CreateSquadForm({}: {}) {
 
   async function submitHandler() {
     if (!connected) throw new Error('Please connect your wallet.');
+    const values = formState.values as unknown as CreateSquadFormData;
     try {
       const createKey = Keypair.generate();
 
       const { transaction, multisig } = await createMultisig(
         connection,
         publicKey!,
-        formState.values.members.memberData,
-        formState.values.threshold,
+        values.members.memberData,
+        values.threshold,
         createKey.publicKey,
-        formState.values.rentCollector,
-        formState.values.configAuthority,
+        values.rentCollector,
+        values.configAuthority,
         programId.toBase58()
       );
 
@@ -76,34 +78,26 @@ export default function CreateSquadForm({}: {}) {
         skipPreflight: true,
         signers: [createKey],
       });
-      console.log('Transaction signature', signature);
       toast.loading('Confirming...', {
         id: 'create',
       });
 
-      let sent = false;
-      const maxAttempts = 10;
-      const delayMs = 1000;
-      for (let attempt = 0; attempt <= maxAttempts && !sent; attempt++) {
-        const status = await connection.getSignatureStatus(signature);
-        if (status?.value?.confirmationStatus === 'confirmed') {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-          sent = true;
-        } else {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
+      const [confirmed] = await waitForConfirmation(connection, [signature]);
+      if (!confirmed) {
+        throw `Transaction failed or timed out. Check ${signature}`;
       }
 
       setMultisigAddress.mutate(multisig.toBase58());
 
       return { signature, multisig: multisig.toBase58() };
-    } catch (error: any) {
-      console.error(error);
-      return error;
+    } catch (error: unknown) {
+      throw error;
     } finally {
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
+
+  const values = formState.values as unknown as CreateSquadFormData;
 
   return (
     <>
@@ -112,7 +106,7 @@ export default function CreateSquadForm({}: {}) {
           <label htmlFor="members" className="font-medium">
             Members <span className="text-red-600">*</span>
           </label>
-          {formState.values.members.memberData.map((member: Member, i: number) => (
+          {values.members.memberData.map((member: Member, i: number) => (
             <div key={i} className="grid grid-cols-4 items-center gap-2">
               <div className="relative col-span-3">
                 <Input
@@ -120,8 +114,8 @@ export default function CreateSquadForm({}: {}) {
                   placeholder={`Member key ${i + 1}`}
                   onChange={(e) => {
                     handleChange('members', {
-                      count: formState.values.members.count,
-                      memberData: formState.values.members.memberData.map(
+                      count: values.members.count,
+                      memberData: values.members.memberData.map(
                         (member: Member, index: number) => {
                           if (index === i) {
                             let newKey = null;
@@ -129,8 +123,8 @@ export default function CreateSquadForm({}: {}) {
                               if (e.target.value && PublicKey.isOnCurve(e.target.value)) {
                                 newKey = new PublicKey(e.target.value);
                               }
-                            } catch (error) {
-                              console.error('Invalid public key input:', error);
+                            } catch (_) {
+                              // invalid key — newKey stays null
                             }
                             return {
                               ...member,
@@ -147,8 +141,8 @@ export default function CreateSquadForm({}: {}) {
                   <XIcon
                     onClick={() => {
                       handleChange('members', {
-                        count: formState.values.members.count,
-                        memberData: formState.values.members.memberData.filter(
+                        count: values.members.count,
+                        memberData: values.members.memberData.filter(
                           (_: Member, index: number) => index !== i
                         ),
                       });
@@ -159,10 +153,10 @@ export default function CreateSquadForm({}: {}) {
               </div>
               <Select
                 defaultValue={member.permissions.mask.toString()}
-                onValueChange={(e: any) => {
+                onValueChange={(e: string) => {
                   handleChange('members', {
-                    count: formState.values.members.count,
-                    memberData: formState.values.members.memberData.map(
+                    count: values.members.count,
+                    memberData: values.members.memberData.map(
                       (member: Member, index: number) => {
                         if (index === i) {
                           return {
@@ -211,7 +205,7 @@ export default function CreateSquadForm({}: {}) {
           <Input
             type="number"
             placeholder="Approval threshold for execution"
-            defaultValue={formState.values.threshold}
+            defaultValue={values.threshold}
             onChange={(e) => handleChange('threshold', parseInt(e.target.value))}
             className=""
           />
@@ -226,7 +220,7 @@ export default function CreateSquadForm({}: {}) {
           <Input
             type="text"
             placeholder="Optional rent collector"
-            defaultValue={formState.values.rentCollector}
+            defaultValue={values.rentCollector}
             onChange={(e) => handleChange('rentCollector', e.target.value)}
             className=""
           />
@@ -241,7 +235,7 @@ export default function CreateSquadForm({}: {}) {
           <Input
             type="text"
             placeholder="Optional config authority"
-            defaultValue={formState.values.configAuthority}
+            defaultValue={values.configAuthority}
             onChange={(e) => handleChange('configAuthority', e.target.value)}
             className=""
           />
@@ -300,36 +294,32 @@ export default function CreateSquadForm({}: {}) {
 
 function getValidationRules(): ValidationRules {
   return {
-    threshold: async (value: number) => {
-      if (value < 1) return 'Threshold must be greater than 0';
+    threshold: async (value: unknown) => {
+      if ((value as number) < 1) return 'Threshold must be greater than 0';
       return null;
     },
-    rentCollector: async (value: string) => {
-      const valid = isPublickey(value);
-      if (!valid) return 'Rent collector must be a valid public key';
+    rentCollector: async (value: unknown) => {
+      if (!isPublickey(value as string)) return 'Rent collector must be a valid public key';
       return null;
     },
-    configAuthority: async (value: string) => {
-      const valid = isPublickey(value);
-      if (!valid) return 'Config authority must be a valid public key';
+    configAuthority: async (value: unknown) => {
+      if (!isPublickey(value as string)) return 'Config authority must be a valid public key';
       return null;
     },
-    members: async (value: { count: number; memberData: Member[] }) => {
-      if (value.count < 1) return 'At least one member is required';
+    members: async (value: unknown) => {
+      const { count, memberData } = value as { count: number; memberData: Member[] };
+      if (count < 1) return 'At least one member is required';
 
       const valid = await Promise.all(
-        value.memberData.map(async (member) => {
+        memberData.map(async (member) => {
           if (member.key == null) return 'Invalid Member Key';
-          const valid = isPublickey(member.key.toBase58());
-          if (!valid) return 'Invalid Member Key';
+          if (!isPublickey(member.key.toBase58())) return 'Invalid Member Key';
           return null;
         })
       );
 
-      if (valid.includes('Invalid Member Key')) {
-        let index = valid.findIndex((v) => v === 'Invalid Member Key');
-        return `Member ${index + 1} is invalid`;
-      }
+      const firstInvalid = valid.findIndex((v) => v === 'Invalid Member Key');
+      if (firstInvalid !== -1) return `Member ${firstInvalid + 1} is invalid`;
 
       return null;
     },

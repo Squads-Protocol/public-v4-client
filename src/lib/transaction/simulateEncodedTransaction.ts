@@ -34,11 +34,9 @@ export const simulateEncodedTransaction = async (
     });
 
     if (value.err) {
-      console.error(value.err);
       throw 'Simulation failed';
     }
-  } catch (error: any) {
-    console.error(error);
-    throw new Error(error);
+  } catch (error: unknown) {
+    throw new Error(String(error));
   }
 };

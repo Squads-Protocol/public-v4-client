@@ -1,42 +1,37 @@
-import { Connection, RpcResponseAndContext, SignatureStatus } from '@solana/web3.js';
+import { Connection, SignatureStatus } from '@solana/web3.js';
+
+const TIMEOUT_MS = 30_000;
+const INITIAL_DELAY_MS = 1_000;
 
 export async function waitForConfirmation(
-  connection: Connection, // Adjust type based on your connection object
-  signatures: string[],
-  timeoutMs: number = 10000
-): Promise<(null | SignatureStatus)[]> {
+  connection: Connection,
+  signatures: string[]
+): Promise<(SignatureStatus | null)[]> {
   const startTime = Date.now();
-  let latestStatuses: (null | SignatureStatus)[] = [];
+  let delayMs = INITIAL_DELAY_MS;
 
-  return new Promise((resolve, reject) => {
-    const checkStatus = async () => {
-      while (Date.now() - startTime < timeoutMs) {
-        const response: RpcResponseAndContext<(SignatureStatus | null)[]> =
-          await connection.getSignatureStatuses(signatures);
-        latestStatuses = response.value; // Store latest response
+  while (Date.now() - startTime < TIMEOUT_MS) {
+    await new Promise((r) => setTimeout(r, delayMs));
+    delayMs *= 2;
 
-        // Check if the signatures are confirmed
-        if (
-          latestStatuses.every(
-            (status) =>
-              (!status?.err || Object.keys(status?.err).length === 0) &&
-              status?.confirmationStatus === 'confirmed'
-          )
-        ) {
-          return resolve(latestStatuses);
-        }
+    const { value: statuses } = await connection.getSignatureStatuses(signatures);
 
-        // Wait for 1 second before next check
-        await new Promise((r) => setTimeout(r, 500));
-      }
-      console.log(latestStatuses);
-      // Timeout reached, return the last known status
-      resolve(latestStatuses);
-    };
+    // Explicit on-chain failure — return null for failed, status for others
+    if (statuses.some((s) => s?.err != null)) {
+      return statuses.map((s) => (s?.err != null ? null : s));
+    }
 
-    Promise.race([
-      checkStatus(),
-      new Promise<void>((r) => setTimeout(r, timeoutMs)).then(() => reject(latestStatuses)), // Ensure latestStatuses is returned
-    ]);
-  });
+    // All confirmed or finalized — success
+    if (
+      statuses.every(
+        (s) =>
+          s?.confirmationStatus === 'confirmed' || s?.confirmationStatus === 'finalized'
+      )
+    ) {
+      return statuses;
+    }
+  }
+
+  // 30s elapsed without explicit success or failure — treat as failure
+  return signatures.map(() => null);
 }

@@ -3,13 +3,8 @@ import { PublicKey } from "@solana/web3.js";
 
 export function isPublickey(key: string) {
   try {
-    const pk = new PublicKey(key);
-    if (pk) {
-      return true;
-    } else {
-      console.log("Invalid public key");
-      return false;
-    }
+    new PublicKey(key);
+    return true;
   } catch (err) {
     return false;
   }

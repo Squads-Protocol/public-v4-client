@@ -20,12 +20,14 @@ module.exports = {
       assert: require.resolve('assert/'),
       util: require.resolve('util/'),
       events: require.resolve('events/'),
-      process: require.resolve('process/browser'),
+      process: require.resolve('process/browser.js'),
       buffer: require.resolve('buffer/'),
     },
     alias: {
       react: path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      '@solana/web3.js': path.resolve(__dirname, 'node_modules/@solana/web3.js'),
+      'process/browser': path.resolve(__dirname, 'node_modules/process/browser.js'),
     },
   },
   module: {
@@ -50,7 +52,7 @@ module.exports = {
       template: 'public/index.html',
     }),
     new webpack.ProvidePlugin({
-      process: 'process/browser',
+      process: 'process/browser.js',
       Buffer: ['buffer', 'Buffer'],
     }),
   ],

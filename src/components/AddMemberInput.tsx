@@ -14,6 +14,7 @@ import { isMember } from '../lib/utils';
 import invariant from 'invariant';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
+import { buildProposalAndApproveIx } from '@/lib/multisigUtils';
 
 type AddMemberInputProps = {
   multisigPda: string;
@@ -59,20 +60,12 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
       rentPayer: wallet.publicKey,
       programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
-    const proposalIx = multisig.instructions.proposalCreate({
-      multisigPda: new PublicKey(multisigPda),
-      creator: wallet.publicKey,
-      isDraft: false,
-      transactionIndex: bigIntTransactionIndex,
-      rentPayer: wallet.publicKey,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
-    const approveIx = multisig.instructions.proposalApprove({
-      multisigPda: new PublicKey(multisigPda),
-      member: wallet.publicKey,
-      transactionIndex: bigIntTransactionIndex,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-    });
+    const [proposalIx, approveIx] = buildProposalAndApproveIx(
+      new PublicKey(multisigPda),
+      wallet.publicKey,
+      bigIntTransactionIndex,
+      programId ? new PublicKey(programId) : multisig.PROGRAM_ID
+    );
 
     const message = new TransactionMessage({
       instructions: [addMemberIx, proposalIx, approveIx],
@@ -85,7 +78,6 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    console.log('Transaction signature', signature);
     toast.loading('Confirming...', {
       id: 'transaction',
     });

@@ -2,6 +2,7 @@
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { Button } from './ui/button';
 import * as multisig from '@sqds/multisig';
+import { useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ type RejectButtonProps = {
   transactionIndex: number;
   proposalStatus: string;
   programId: string;
+  isStale: boolean;
 };
 
 const RejectButton = ({
@@ -21,6 +23,7 @@ const RejectButton = ({
   transactionIndex,
   proposalStatus,
   programId,
+  isStale,
 }: RejectButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
@@ -28,8 +31,9 @@ const RejectButton = ({
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
 
-  const validKinds = ['None', 'Active', 'Draft'];
-  const isKindValid = validKinds.includes(proposalStatus);
+  const rejectableStatuses = ['None', 'Active', 'Draft'];
+  const isDisabled = isStale || !rejectableStatuses.includes(proposalStatus);
+  const signatureRef = useRef<string>('');
 
   const rejectTransaction = async () => {
     if (!wallet.publicKey) {
@@ -38,7 +42,7 @@ const RejectButton = ({
     }
     let bigIntTransactionIndex = BigInt(transactionIndex);
 
-    if (!isKindValid) {
+    if (isDisabled) {
       toast.error("You can't reject this proposal.");
       return;
     }
@@ -76,7 +80,10 @@ const RejectButton = ({
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    console.log('Transaction signature', signature);
+    signatureRef.current = signature;
+    toast.info(`Sending ${signature}`, {
+      duration: Infinity,
+    });
     toast.loading('Confirming...', {
       id: 'transaction',
     });
@@ -88,13 +95,13 @@ const RejectButton = ({
   };
   return (
     <Button
-      disabled={!isKindValid}
+      disabled={isDisabled}
       onClick={() =>
         toast.promise(rejectTransaction, {
           id: 'transaction',
           loading: 'Loading...',
           success: 'Transaction rejected.',
-          error: (e) => `Failed to reject: ${e}`,
+          error: (e) => `Failed to reject: ${e}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
         })
       }
       className="mr-2"

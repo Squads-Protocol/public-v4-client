@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogDescription, DialogHeader } from './ui/dialog';
 import { DialogTrigger } from './ui/dialog';
 import { DialogContent, DialogTitle } from './ui/dialog';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Input } from './ui/input';
 import { range } from '@/lib/utils';
 import { useMultisigData } from '@/hooks/useMultisigData';
@@ -31,6 +31,7 @@ type ExecuteButtonProps = {
   transactionIndex: number;
   proposalStatus: string;
   programId: string;
+  isStale: boolean;
 };
 
 const ExecuteButton = ({
@@ -38,6 +39,7 @@ const ExecuteButton = ({
   transactionIndex,
   proposalStatus,
   programId,
+  isStale,
 }: ExecuteButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
@@ -46,9 +48,10 @@ const ExecuteButton = ({
   const [priorityFeeLamports, setPriorityFeeLamports] = useState<number>(5000);
   const [computeUnitBudget, setComputeUnitBudget] = useState<number>(200_000);
 
-  const isTransactionReady = proposalStatus === 'Approved';
+  const isTransactionReady = proposalStatus === 'Approved' && !isStale;
 
   const { connection } = useMultisigData();
+  const signaturesRef = useRef<string[]>([]);
   const queryClient = useQueryClient();
 
   const executeTransaction = async () => {
@@ -58,20 +61,13 @@ const ExecuteButton = ({
     }
     const member = wallet.publicKey;
     if (!wallet.signAllTransactions) return;
+    signaturesRef.current = [];
     let bigIntTransactionIndex = BigInt(transactionIndex);
 
     if (!isTransactionReady) {
       toast.error('Proposal has not reached threshold.');
       return;
     }
-
-    console.log({
-      multisigPda: multisigPda,
-      connection,
-      member: member.toBase58(),
-      transactionIndex: bigIntTransactionIndex,
-      programId: programId ? programId : multisig.PROGRAM_ID.toBase58(),
-    });
 
     const [transactionPda] = multisig.getTransactionPda({
       multisigPda: new PublicKey(multisigPda),
@@ -82,26 +78,14 @@ const ExecuteButton = ({
     let txData;
     let txType;
     try {
-      await multisig.accounts.VaultTransaction.fromAccountAddress(
-        // @ts-ignore
-        connection,
-        transactionPda
-      );
+      await multisig.accounts.VaultTransaction.fromAccountAddress(connection, transactionPda);
       txType = 'vault';
     } catch (error) {
       try {
-        await multisig.accounts.ConfigTransaction.fromAccountAddress(
-          // @ts-ignore
-          connection,
-          transactionPda
-        );
+        await multisig.accounts.ConfigTransaction.fromAccountAddress(connection, transactionPda);
         txType = 'config';
       } catch (e) {
-        txData = await multisig.accounts.Batch.fromAccountAddress(
-          // @ts-ignore
-          connection,
-          transactionPda
-        );
+        txData = await multisig.accounts.Batch.fromAccountAddress(connection, transactionPda);
         txType = 'batch';
       }
     }
@@ -120,7 +104,6 @@ const ExecuteButton = ({
     if (txType == 'vault') {
       const resp = await multisig.instructions.vaultTransactionExecute({
         multisigPda: new PublicKey(multisigPda),
-        // @ts-ignore
         connection,
         member,
         transactionIndex: bigIntTransactionIndex,
@@ -167,7 +150,6 @@ const ExecuteButton = ({
           range(executedBatchIndex + 1, batchSize).map(async (batchIndex) => {
             const { instruction: transactionExecuteIx, lookupTableAccounts } =
               await multisig.instructions.batchExecuteTransaction({
-                // @ts-ignore
                 connection,
                 member,
                 batchIndex: bigIntTransactionIndex,
@@ -190,21 +172,23 @@ const ExecuteButton = ({
 
     const signedTransactions = await wallet.signAllTransactions(transactions);
 
-    let signatures = [];
-    for (const signedTx of signedTransactions) {
-      const signature = await connection.sendRawTransaction(signedTx.serialize(), {
+    const signatures: string[] = [];
+    for (let i = 0; i < signedTransactions.length; i++) {
+      const label =
+        signedTransactions.length > 1 ? ` (${i + 1}/${signedTransactions.length})` : '';
+
+      const signature = await connection.sendRawTransaction(signedTransactions[i].serialize(), {
         skipPreflight: true,
       });
       signatures.push(signature);
-      console.log('Transaction signature', signature);
-      toast.loading('Confirming...', {
-        id: 'transaction',
-      });
-    }
-    const sent = await waitForConfirmation(connection, signatures);
-    console.log('sent', sent);
-    if (!sent.every((sent) => !!sent)) {
-      throw `Unable to confirm`;
+      signaturesRef.current.push(signature);
+
+      toast.loading(`Confirming${label}...`, { id: 'transaction' });
+
+      const [confirmed] = await waitForConfirmation(connection, [signature]);
+      if (!confirmed) {
+        throw `Transaction${label} failed or timed out. Check ${signature}`;
+      }
     }
     closeDialog();
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -245,7 +229,7 @@ const ExecuteButton = ({
               id: 'transaction',
               loading: 'Loading...',
               success: 'Transaction executed.',
-              error: 'Failed to execute. Check console for info.',
+              error: (e) => `Failed to execute: ${e}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
             })
           }
           className="mr-2"

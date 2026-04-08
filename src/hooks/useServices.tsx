@@ -16,10 +16,8 @@ export const useMultisig = () => {
       if (!multisigAddress) return null;
       try {
         const multisigPubkey = new PublicKey(multisigAddress);
-        // @ts-ignore
         return multisig.accounts.Multisig.fromAccountAddress(connection, multisigPubkey);
       } catch (error) {
-        console.error(error);
         return null;
       }
     },
@@ -36,7 +34,6 @@ export const useBalance = () => {
       try {
         return connection.getBalance(multisigVault);
       } catch (error) {
-        console.error(error);
         return null;
       }
     },
@@ -59,7 +56,6 @@ export const useGetTokens = () => {
         });
         return classicTokens.value.concat(t22Tokens.value);
       } catch (error) {
-        console.error(error);
         return null;
       }
     },
@@ -86,7 +82,6 @@ async function fetchTransactionData(
 
   let proposal;
   try {
-    // @ts-ignore
     proposal = await multisig.accounts.Proposal.fromAccountAddress(connection, proposalPda[0]);
   } catch (error) {
     proposal = null;
@@ -107,7 +102,7 @@ export const useTransactions = (startIndex: number, endIndex: number) => {
       if (!multisigAddress) return null;
       try {
         const multisigPda = new PublicKey(multisigAddress);
-        const results: any[] = [];
+        const results: Awaited<ReturnType<typeof fetchTransactionData>>[] = [];
 
         for (let i = 0; i <= startIndex - endIndex; i++) {
           const index = BigInt(startIndex - i);
