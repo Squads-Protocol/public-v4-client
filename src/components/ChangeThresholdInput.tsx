@@ -13,6 +13,7 @@ import { types as multisigTypes } from '@sqds/multisig';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMultisigData } from '../hooks/useMultisigData';
+import { useAccess } from '../hooks/useAccess';
 import { buildProposalAndApproveIx } from '../lib/multisigUtils';
 
 type ChangeThresholdInputProps = {
@@ -22,6 +23,7 @@ type ChangeThresholdInputProps = {
 
 const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThresholdInputProps) => {
   const { data: multisigConfig } = useMultisig();
+  const hasAccess = useAccess();
   const [threshold, setThreshold] = useState('');
   const wallet = useWallet();
   const walletModal = useWalletModal();
@@ -54,7 +56,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
   const changeThreshold = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
-      return;
+      throw 'Wallet not connected';
     }
     const validateError = validateThreshold();
     if (validateError) {
@@ -121,7 +123,9 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
           })
         }
         disabled={
-          !threshold || (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10))
+          !hasAccess ||
+          !threshold ||
+          (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10))
         }
       >
         Change Threshold
