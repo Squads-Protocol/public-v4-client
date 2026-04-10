@@ -1,4 +1,5 @@
 import * as multisig from '@sqds/multisig';
+import { PublicKey } from '@solana/web3.js';
 import ApproveButton from './ApproveButton';
 import ExecuteButton from './ExecuteButton';
 import RejectButton from './RejectButton';
@@ -13,6 +14,9 @@ interface ActionButtonsProps {
   proposalStatus: string;
   programId: string;
   isStale: boolean;
+  approvedMembers: PublicKey[];
+  rejectedMembers: PublicKey[];
+  isAccountClosed: boolean;
 }
 
 export default function TransactionTable({
@@ -25,6 +29,7 @@ export default function TransactionTable({
     transactionPda: string;
     proposal: multisig.generated.Proposal | null;
     index: bigint;
+    transactionExists: boolean;
   }[];
   programId?: string;
 }) {
@@ -58,7 +63,11 @@ export default function TransactionTable({
               </Link>
             </TableCell>
             <TableCell>
-              {stale ? '(stale)' : transaction.proposal?.status.__kind || 'None'}
+              {!transaction.transactionExists
+                ? 'Closed'
+                : stale
+                  ? '(stale)'
+                  : transaction.proposal?.status.__kind || 'None'}
             </TableCell>
             <TableCell>
               <ActionButtons
@@ -67,6 +76,9 @@ export default function TransactionTable({
                 proposalStatus={transaction.proposal?.status.__kind || 'None'}
                 programId={programId ? programId : multisig.PROGRAM_ID.toBase58()}
                 isStale={stale}
+                approvedMembers={transaction.proposal?.approved ?? []}
+                rejectedMembers={transaction.proposal?.rejected ?? []}
+                isAccountClosed={!transaction.transactionExists}
               />
             </TableCell>
           </TableRow>
@@ -82,6 +94,9 @@ function ActionButtons({
   proposalStatus,
   programId,
   isStale,
+  approvedMembers,
+  rejectedMembers,
+  isAccountClosed,
 }: ActionButtonsProps) {
   return (
     <>
@@ -91,6 +106,8 @@ function ActionButtons({
         proposalStatus={proposalStatus}
         programId={programId}
         isStale={isStale}
+        approvedMembers={approvedMembers}
+        isAccountClosed={isAccountClosed}
       />
       <RejectButton
         multisigPda={multisigPda}
@@ -98,6 +115,8 @@ function ActionButtons({
         proposalStatus={proposalStatus}
         programId={programId}
         isStale={isStale}
+        rejectedMembers={rejectedMembers}
+        isAccountClosed={isAccountClosed}
       />
       <ExecuteButton
         multisigPda={multisigPda}
@@ -105,6 +124,7 @@ function ActionButtons({
         proposalStatus={proposalStatus}
         programId={programId}
         isStale={isStale}
+        isAccountClosed={isAccountClosed}
       />
     </>
   );

@@ -32,6 +32,7 @@ type ExecuteButtonProps = {
   proposalStatus: string;
   programId: string;
   isStale: boolean;
+  isAccountClosed: boolean;
 };
 
 const ExecuteButton = ({
@@ -40,6 +41,7 @@ const ExecuteButton = ({
   proposalStatus,
   programId,
   isStale,
+  isAccountClosed,
 }: ExecuteButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
@@ -48,7 +50,7 @@ const ExecuteButton = ({
   const [priorityFeeLamports, setPriorityFeeLamports] = useState<number>(5000);
   const [computeUnitBudget, setComputeUnitBudget] = useState<number>(200_000);
 
-  const isTransactionReady = proposalStatus === 'Approved' && !isStale;
+  const isTransactionReady = !isAccountClosed && proposalStatus === 'Approved' && !isStale;
 
   const { connection } = useMultisigData();
   const signaturesRef = useRef<string[]>([]);

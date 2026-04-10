@@ -80,14 +80,14 @@ async function fetchTransactionData(
     programId,
   });
 
-  let proposal;
-  try {
-    proposal = await multisig.accounts.Proposal.fromAccountAddress(connection, proposalPda[0]);
-  } catch (error) {
-    proposal = null;
-  }
+  const [transactionAccountInfo, proposal] = await Promise.all([
+    connection.getAccountInfo(transactionPda[0]),
+    multisig.accounts.Proposal.fromAccountAddress(connection, proposalPda[0]).catch(() => null),
+  ]);
 
-  return { transactionPda, proposal, index };
+  const transactionExists = transactionAccountInfo !== null;
+
+  return { transactionPda, proposal, index, transactionExists };
 }
 
 export const useTransactions = (startIndex: number, endIndex: number) => {
