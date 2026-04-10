@@ -184,7 +184,8 @@ const ExecuteButton = ({
       signatures.push(signature);
       signaturesRef.current.push(signature);
 
-      toast.loading(`Confirming${label}...`, { id: 'transaction' });
+      toast.info(`Sending${label} ${signature}`, { duration: Infinity });
+      toast.loading(`Confirming${label} ${signature}...`, { duration: Infinity });
 
       const [confirmed] = await waitForConfirmation(connection, [signature]);
       if (!confirmed) {
