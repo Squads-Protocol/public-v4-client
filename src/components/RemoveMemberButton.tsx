@@ -36,7 +36,7 @@ const RemoveMemberButton = ({
   const removeMember = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
-      return;
+      throw 'Wallet not connected';
     }
     let bigIntTransactionIndex = BigInt(transactionIndex);
 

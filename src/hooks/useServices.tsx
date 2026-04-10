@@ -81,7 +81,7 @@ async function fetchTransactionData(
   });
 
   const [transactionAccountInfo, proposal] = await Promise.all([
-    connection.getAccountInfo(transactionPda[0]),
+    connection.getAccountInfo(transactionPda[0]).catch(() => null),
     multisig.accounts.Proposal.fromAccountAddress(connection, proposalPda[0]).catch(() => null),
   ]);
 

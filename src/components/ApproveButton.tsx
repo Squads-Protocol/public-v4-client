@@ -47,7 +47,7 @@ const ApproveButton = ({
     isStale ||
     terminalStatuses.includes(proposalStatus || 'None') ||
     hasAlreadyApproved ||
-    !hasVotePermission;
+    (!!wallet.publicKey && !hasVotePermission);
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');

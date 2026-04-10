@@ -52,7 +52,7 @@ const RejectButton = ({
     isStale ||
     !rejectableStatuses.includes(proposalStatus) ||
     hasAlreadyRejected ||
-    !hasVotePermission;
+    (!!wallet.publicKey && !hasVotePermission);
   const signatureRef = useRef<string>('');
 
   const rejectTransaction = async () => {
@@ -61,11 +61,6 @@ const RejectButton = ({
       throw 'Wallet not connected';
     }
     let bigIntTransactionIndex = BigInt(transactionIndex);
-
-    if (isDisabled) {
-      toast.error("You can't reject this proposal.");
-      return;
-    }
 
     const transaction = new Transaction();
     if (proposalStatus === 'None') {
