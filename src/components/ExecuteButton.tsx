@@ -16,7 +16,7 @@ import { DialogTrigger } from './ui/dialog';
 import { DialogContent, DialogTitle } from './ui/dialog';
 import { useRef, useState } from 'react';
 import { Input } from './ui/input';
-import { range } from '@/lib/utils';
+import { range, formatTransactionError } from '@/lib/utils';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
@@ -231,7 +231,7 @@ const ExecuteButton = ({
               id: 'transaction',
               loading: 'Loading...',
               success: 'Transaction executed.',
-              error: (e) => `Failed to execute: ${e}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
+              error: (e) => `Failed to execute: ${formatTransactionError(e)}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
             })
           }
           className="mr-2"

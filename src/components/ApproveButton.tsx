@@ -9,7 +9,7 @@ import { useMultisigData } from '@/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useMultisig } from '@/hooks/useServices';
-import { isMember } from '@/lib/utils';
+import { isMember, formatTransactionError } from '@/lib/utils';
 
 type ApproveButtonProps = {
   multisigPda: string;
@@ -110,7 +110,7 @@ const ApproveButton = ({
           id: 'transaction',
           loading: 'Loading...',
           success: 'Transaction approved.',
-          error: (e) => `Failed to approve: ${e}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+          error: (e) => `Failed to approve: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
         })
       }
       className="mr-2"

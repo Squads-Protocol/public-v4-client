@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import * as bs58 from 'bs58';
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import { useState } from 'react';
 import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -97,9 +98,7 @@ const CreateTransaction = () => {
                 id: 'simulation',
                 loading: 'Building simulation...',
                 success: 'Simulation successful.',
-                error: (e) => {
-                  return `${e}`;
-                },
+                error: (e) => formatTransactionError(e),
               });
             }}
           >
@@ -124,7 +123,7 @@ const CreateTransaction = () => {
                       setOpen(false);
                       return 'Transaction proposed.';
                     },
-                    error: (e) => `Failed to propose: ${e}`,
+                    error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
                   }
                 )
               }

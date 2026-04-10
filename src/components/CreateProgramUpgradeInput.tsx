@@ -4,6 +4,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import * as multisig from '@sqds/multisig';
+import { formatTransactionError } from '@/lib/utils';
 import {
   AccountMeta,
   PublicKey,
@@ -169,7 +170,7 @@ const CreateProgramUpgradeInput = ({
             id: 'transaction',
             loading: 'Loading...',
             success: 'Upgrade authority change proposed.',
-            error: (e) => `Failed to propose: ${e}`,
+            error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
           })
         }
         disabled={

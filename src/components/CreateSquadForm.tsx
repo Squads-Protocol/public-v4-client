@@ -1,6 +1,7 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Member, createMultisig } from '@/lib/createSquad';
+import { formatTransactionError } from '@/lib/utils';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { CheckSquare, Copy, ExternalLink, PlusCircleIcon, XIcon } from 'lucide-react';
@@ -282,7 +283,7 @@ export default function CreateSquadForm({}: {}) {
                 </div>
               </div>
             ),
-            error: (e) => `Failed to create squad: ${e}`,
+            error: (e) => `Failed to create squad: ${formatTransactionError(e)}`,
           })
         }
       >

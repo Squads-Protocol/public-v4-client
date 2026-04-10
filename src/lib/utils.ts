@@ -27,3 +27,17 @@ export const renderPermissions = (permissionsMask: number) => {
 export const isMember = (publicKey: PublicKey, members: multisigTypes.Member[]) => {
   return members.find((v: multisigTypes.Member) => v.key.equals(publicKey));
 };
+
+export function formatTransactionError(e: unknown): string {
+  if (e instanceof Error) {
+    let msg = e.message;
+    const raw = (e as any).error;
+    if (raw != null) {
+      try {
+        msg += `: ${typeof raw === 'string' ? raw : JSON.stringify(raw)}`;
+      } catch { /* ignore unserializable error details */ }
+    }
+    return msg;
+  }
+  return String(e);
+}

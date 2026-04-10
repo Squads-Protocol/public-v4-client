@@ -1,5 +1,6 @@
 import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
@@ -85,7 +86,7 @@ const RemoveMemberButton = ({
           id: 'transaction',
           loading: 'Submitting...',
           success: 'Remove Member action proposed.',
-          error: (e) => `Failed to propose: ${e}`,
+          error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
         })
       }
     >

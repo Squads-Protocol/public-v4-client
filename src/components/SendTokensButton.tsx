@@ -7,6 +7,7 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog';
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import { useState } from 'react';
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -202,7 +203,7 @@ const SendTokens = ({
               id: 'transaction',
               loading: 'Loading...',
               success: 'Transfer proposed.',
-              error: (e) => `Failed to propose: ${e}`,
+              error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
             })
           }
           disabled={!isPublickey(recipient) || amount.length < 1 || !isAmountValid}

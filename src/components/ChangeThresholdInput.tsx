@@ -1,4 +1,5 @@
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
@@ -113,7 +114,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
             id: 'transaction',
             loading: 'Loading...',
             success: 'Threshold change proposed.',
-            error: (e) => `Failed to propose: ${e}`,
+            error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
           })
         }
         disabled={

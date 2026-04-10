@@ -10,7 +10,7 @@ import { useMultisigData } from '@/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useMultisig } from '@/hooks/useServices';
-import { isMember } from '@/lib/utils';
+import { isMember, formatTransactionError } from '@/lib/utils';
 
 type RejectButtonProps = {
   multisigPda: string;
@@ -121,7 +121,7 @@ const RejectButton = ({
           id: 'transaction',
           loading: 'Loading...',
           success: 'Transaction rejected.',
-          error: (e) => `Failed to reject: ${e}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+          error: (e) => `Failed to reject: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
         })
       }
       className="mr-2"

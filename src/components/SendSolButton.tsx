@@ -7,6 +7,7 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog';
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import { useState } from 'react';
 import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -157,7 +158,7 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
               id: 'transaction',
               loading: 'Loading...',
               success: 'Transfer proposed.',
-              error: (e) => `Failed to propose: ${e}`,
+              error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
             })
           }
           disabled={!isPublickey(recipient)}
