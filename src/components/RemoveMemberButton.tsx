@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { Button } from './ui/button';
 import { formatTransactionError } from '@/lib/utils';
@@ -30,6 +31,7 @@ const RemoveMemberButton = ({
   const member = new PublicKey(memberKey);
   const queryClient = useQueryClient();
   const { connection } = useMultisigData();
+  const signatureRef = useRef<string>('');
 
   const removeMember = async () => {
     if (!wallet.publicKey) {
@@ -69,6 +71,8 @@ const RemoveMemberButton = ({
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
+    signatureRef.current = signature;
+    toast.info(`Sending ${signature}`, { duration: Infinity });
     toast.loading('Confirming...', {
       id: 'transaction',
     });
@@ -86,7 +90,7 @@ const RemoveMemberButton = ({
           id: 'transaction',
           loading: 'Submitting...',
           success: 'Remove Member action proposed.',
-          error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
+          error: (e) => `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
         })
       }
     >

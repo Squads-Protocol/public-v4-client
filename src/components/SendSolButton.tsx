@@ -8,7 +8,7 @@ import {
 } from '~/components/ui/dialog';
 import { Button } from './ui/button';
 import { formatTransactionError } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
 import {
@@ -42,6 +42,7 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
   const [recipient, setRecipient] = useState('');
   const { connection, programId } = useMultisigData();
   const queryClient = useQueryClient();
+  const signatureRef = useRef<string>('');
   const parsedAmount = parseFloat(amount);
   const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
   const isMember = useAccess();
@@ -108,6 +109,8 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
+    signatureRef.current = signature;
+    toast.info(`Sending ${signature}`, { duration: Infinity });
     toast.loading('Confirming...', {
       id: 'transaction',
     });
@@ -158,7 +161,7 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
               id: 'transaction',
               loading: 'Loading...',
               success: 'Transfer proposed.',
-              error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
+              error: (e) => `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
             })
           }
           disabled={!isPublickey(recipient)}

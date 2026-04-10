@@ -2,7 +2,7 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import * as multisig from '@sqds/multisig';
 import { formatTransactionError } from '@/lib/utils';
@@ -34,6 +34,7 @@ const ChangeUpgradeAuthorityInput = ({
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const queryClient = useQueryClient();
+  const signatureRef = useRef<string>('');
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection, multisigAddress, vaultIndex, programId, multisigVault } = useMultisigData();
 
@@ -118,6 +119,8 @@ const ChangeUpgradeAuthorityInput = ({
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
+    signatureRef.current = signature;
+    toast.info(`Sending ${signature}`, { duration: Infinity });
     toast.loading('Confirming...', {
       id: 'transaction',
     });
@@ -141,7 +144,7 @@ const ChangeUpgradeAuthorityInput = ({
             id: 'transaction',
             loading: 'Loading...',
             success: 'Upgrade authority change proposed.',
-            error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
+            error: (e) => `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
           })
         }
         disabled={

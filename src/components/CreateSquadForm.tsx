@@ -1,5 +1,6 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { useRef } from 'react';
 import { Member, createMultisig } from '@/lib/createSquad';
 import { formatTransactionError } from '@/lib/utils';
 import { Keypair, PublicKey } from '@solana/web3.js';
@@ -39,6 +40,7 @@ export default function CreateSquadForm({}: {}) {
 
   const { connection, programId } = useMultisigData();
   const { setMultisigAddress } = useMultisigAddress();
+  const signatureRef = useRef<string>('');
   const validationRules = getValidationRules();
 
   const { formState, handleChange, handleAddMember, onSubmit } = useSquadForm<{
@@ -79,6 +81,8 @@ export default function CreateSquadForm({}: {}) {
         skipPreflight: true,
         signers: [createKey],
       });
+      signatureRef.current = signature;
+      toast.info(`Sending ${signature}`, { duration: Infinity });
       toast.loading('Confirming...', {
         id: 'create',
       });
@@ -283,7 +287,7 @@ export default function CreateSquadForm({}: {}) {
                 </div>
               </div>
             ),
-            error: (e) => `Failed to create squad: ${formatTransactionError(e)}`,
+            error: (e) => `Failed to create squad: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
           })
         }
       >
