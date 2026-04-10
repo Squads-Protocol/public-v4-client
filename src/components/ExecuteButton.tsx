@@ -62,13 +62,12 @@ const ExecuteButton = ({
       throw 'Wallet not connected';
     }
     const member = wallet.publicKey;
-    if (!wallet.signAllTransactions) return;
+    if (!wallet.signAllTransactions) throw 'Connected wallet does not support signing multiple transactions';
     signaturesRef.current = [];
     let bigIntTransactionIndex = BigInt(transactionIndex);
 
     if (!isTransactionReady) {
-      toast.error('Proposal has not reached threshold.');
-      return;
+      throw 'Proposal has not reached threshold';
     }
 
     const [transactionPda] = multisig.getTransactionPda({
