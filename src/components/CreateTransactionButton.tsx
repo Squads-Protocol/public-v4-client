@@ -18,11 +18,13 @@ import { toast } from 'sonner';
 import { simulateEncodedTransaction } from '@/lib/transaction/simulateEncodedTransaction';
 import { importTransaction } from '@/lib/transaction/importTransaction';
 import { useMultisigData } from '@/hooks/useMultisigData';
+import { useAccess } from '@/hooks/useAccess';
 import invariant from 'invariant';
 import { VaultSelector } from './VaultSelector';
 
 const CreateTransaction = () => {
   const wallet = useWallet();
+  const hasAccess = useAccess();
 
   const [tx, setTx] = useState('');
   const [open, setOpen] = useState(false);
@@ -66,8 +68,8 @@ const CreateTransaction = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen} modal={false}>
       <DialogTrigger
-        className={`h-10 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground ${!wallet || !wallet.publicKey ? `bg-primary/50 hover:bg-primary/50` : `hover:bg-primary/90`}`}
-        disabled={!wallet || !wallet.publicKey}
+        className={`h-10 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground ${!hasAccess ? `bg-primary/50 hover:bg-primary/50` : `hover:bg-primary/90`}`}
+        disabled={!hasAccess}
       >
         Import Transaction
       </DialogTrigger>

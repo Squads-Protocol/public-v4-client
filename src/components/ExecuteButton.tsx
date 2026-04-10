@@ -16,8 +16,9 @@ import { DialogTrigger } from './ui/dialog';
 import { DialogContent, DialogTitle } from './ui/dialog';
 import { useRef, useState } from 'react';
 import { Input } from './ui/input';
-import { range, formatTransactionError } from '@/lib/utils';
+import { range, formatTransactionError, isMember } from '@/lib/utils';
 import { useMultisigData } from '@/hooks/useMultisigData';
+import { useMultisig } from '@/hooks/useServices';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 
@@ -50,7 +51,16 @@ const ExecuteButton = ({
   const [priorityFeeLamports, setPriorityFeeLamports] = useState<number>(5000);
   const [computeUnitBudget, setComputeUnitBudget] = useState<number>(200_000);
 
+  const { data: multisigConfig } = useMultisig();
+  const connectedMember = wallet.publicKey
+    ? isMember(wallet.publicKey, multisigConfig?.members ?? [])
+    : undefined;
+  const hasExecutePermission = connectedMember
+    ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Execute)
+    : true; // no wallet connected — allow click so handler can open wallet modal
+
   const isTransactionReady = !isAccountClosed && proposalStatus === 'Approved' && !isStale;
+  const isDisabled = !isTransactionReady || (!!wallet.publicKey && !hasExecutePermission);
 
   const { connection } = useMultisigData();
   const signaturesRef = useRef<string[]>([]);
@@ -198,8 +208,8 @@ const ExecuteButton = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger
-        disabled={!isTransactionReady}
-        className={`mr-2 h-10 px-4 py-2 ${!isTransactionReady ? `bg-primary/50` : `bg-primary hover:bg-primary/90`} rounded-md text-primary-foreground`}
+        disabled={isDisabled}
+        className={`mr-2 h-10 px-4 py-2 ${isDisabled ? `bg-primary/50` : `bg-primary hover:bg-primary/90`} rounded-md text-primary-foreground`}
         onClick={() => setIsOpen(true)}
       >
         Execute
@@ -225,7 +235,7 @@ const ExecuteButton = ({
           value={computeUnitBudget}
         />
         <Button
-          disabled={!isTransactionReady}
+          disabled={isDisabled}
           onClick={() =>
             toast.promise(executeTransaction, {
               id: 'transaction',
