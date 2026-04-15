@@ -1,4 +1,4 @@
-import { ArrowDownUp, LucideHome, Settings, Users, Box, Github } from 'lucide-react';
+import { ArrowDownUp, LucideHome, SquarePlus, Settings, Users, Box, Github } from 'lucide-react';
 import ConnectWallet from '@/components/ConnectWalletButton';
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
@@ -12,6 +12,7 @@ export default function TabNav() {
     { name: 'Transactions', icon: <ArrowDownUp />, route: '/transactions/' },
     { name: 'Configuration', icon: <Users />, route: '/config/' },
     { name: 'Programs', icon: <Box />, route: '/programs/' },
+    { name: 'Create', icon: <SquarePlus />, route: '/create' },
     { name: 'Settings', icon: <Settings />, route: '/settings/' },
   ];
 
