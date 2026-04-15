@@ -57,10 +57,10 @@ const ExecuteButton = ({
     : undefined;
   const hasExecutePermission = connectedMember
     ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Execute)
-    : true; // no wallet connected — allow click so handler can open wallet modal
+    : false;
 
   const isTransactionReady = !isAccountClosed && proposalStatus === 'Approved' && !isStale;
-  const isDisabled = !isTransactionReady || (!!wallet.publicKey && !hasExecutePermission);
+  const isDisabled = !wallet.publicKey || !isTransactionReady || !hasExecutePermission;
 
   const { connection } = useMultisigData();
   const signaturesRef = useRef<string[]>([]);

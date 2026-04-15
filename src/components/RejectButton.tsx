@@ -48,11 +48,12 @@ const RejectButton = ({
     ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Vote)
     : false;
   const isDisabled =
+    !wallet.publicKey ||
     isAccountClosed ||
     isStale ||
     !rejectableStatuses.includes(proposalStatus) ||
     hasAlreadyRejected ||
-    (!!wallet.publicKey && !hasVotePermission);
+    !hasVotePermission;
   const signatureRef = useRef<string>('');
 
   const rejectTransaction = async () => {

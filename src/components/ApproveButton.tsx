@@ -43,11 +43,12 @@ const ApproveButton = ({
     ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Vote)
     : false;
   const isDisabled =
+    !wallet.publicKey ||
     isAccountClosed ||
     isStale ||
     terminalStatuses.includes(proposalStatus || 'None') ||
     hasAlreadyApproved ||
-    (!!wallet.publicKey && !hasVotePermission);
+    !hasVotePermission;
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');
