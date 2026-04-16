@@ -103,7 +103,10 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
     if (!sent[0]) {
       throw `Transaction failed or unable to confirm. Check ${signature}`;
     }
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['multisig'] }),
+    ]);
   };
   return (
     <div>

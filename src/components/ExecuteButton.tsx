@@ -203,7 +203,12 @@ const ExecuteButton = ({
       }
     }
     closeDialog();
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['multisig'] }),
+      queryClient.invalidateQueries({ queryKey: ['balance'] }),
+      queryClient.invalidateQueries({ queryKey: ['tokenBalances'] }),
+    ]);
   };
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

@@ -121,7 +121,10 @@ const SendSol = ({ multisigPda, vaultIndex }: SendSolProps) => {
     setAmount('');
     setRecipient('');
     closeDialog();
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['multisig'] }),
+    ]);
   };
 
   return (
