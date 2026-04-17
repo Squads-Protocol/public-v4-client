@@ -91,18 +91,22 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
 
     const transaction = new VersionedTransaction(message);
 
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
     signatureRef.current = signature;
-    toast.info(`Sending ${signature}`, { duration: Infinity });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
+    toast.success('Threshold change proposed.', { id: 'transaction' });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['multisig'] }),
@@ -117,14 +121,16 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
         className="mb-3"
       />
       <Button
-        onClick={() =>
-          toast.promise(changeThreshold, {
-            id: 'transaction',
-            loading: 'Loading...',
-            success: 'Threshold change proposed.',
-            error: (e) => `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
-          })
-        }
+        onClick={async () => {
+          try {
+            await changeThreshold();
+          } catch (e) {
+            toast.error(
+              `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+              { id: 'transaction' }
+            );
+          }
+        }}
         disabled={
           !hasAccess ||
           !threshold ||

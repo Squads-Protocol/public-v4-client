@@ -77,15 +77,17 @@ export default function CreateSquadForm({}: {}) {
         programId.toBase58()
       );
 
+      toast.loading('Waiting for wallet approval...', { id: 'create', duration: Infinity });
+
       const signature = await sendTransaction(transaction, connection, {
         skipPreflight: true,
         signers: [createKey],
       });
       signatureRef.current = signature;
-      toast.info(`Sending ${signature}`, { duration: Infinity });
-      toast.loading('Confirming...', {
-        id: 'create',
-      });
+
+      const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+      toast.info(`Sent: ${signature}`, { duration: 6000 });
+      toast.info(`Confirming: ${shortSig}`, { id: 'create', duration: Infinity });
 
       const [confirmed] = await waitForConfirmation(connection, [signature]);
       if (!confirmed) {
@@ -250,12 +252,10 @@ export default function CreateSquadForm({}: {}) {
         </div>
       </div>
       <Button
-        onClick={() =>
-          toast.promise(onSubmit(submitHandler), {
-            id: 'create',
-            duration: 10000,
-            loading: 'Building Transaction...',
-            success: (res) => (
+        onClick={async () => {
+          try {
+            const res = await onSubmit(submitHandler);
+            toast.success(
               <div className="w-full flex items-center justify-between">
                 <div className="flex gap-4 items-center">
                   <CheckSquare className="w-4 h-4 text-green-600" />
@@ -285,11 +285,16 @@ export default function CreateSquadForm({}: {}) {
                     <ExternalLink className="w-4 h-4 hover:text-stone-500" />
                   </Link>
                 </div>
-              </div>
-            ),
-            error: (e) => `Failed to create squad: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
-          })
-        }
+              </div>,
+              { id: 'create', duration: 10000 }
+            );
+          } catch (e) {
+            toast.error(
+              `Failed to create squad: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+              { id: 'create' }
+            );
+          }
+        }}
       >
         Create Squad
       </Button>

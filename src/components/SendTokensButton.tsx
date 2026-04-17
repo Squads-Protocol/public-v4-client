@@ -145,18 +145,22 @@ const SendTokens = ({
 
     const transaction = new VersionedTransaction(message);
 
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
     signatureRef.current = signature;
-    toast.info(`Sending ${signature}`, { duration: Infinity });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
+    toast.success('Transfer proposed.', { id: 'transaction' });
     setAmount('');
     setRecipient('');
     await Promise.all([
@@ -204,14 +208,16 @@ const SendTokens = ({
           <p className="text-xs text-red-500">Invalid amount</p>
         )}
         <Button
-          onClick={() =>
-            toast.promise(transfer, {
-              id: 'transaction',
-              loading: 'Loading...',
-              success: 'Transfer proposed.',
-              error: (e) => `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
-            })
-          }
+          onClick={async () => {
+            try {
+              await transfer();
+            } catch (e) {
+              toast.error(
+                `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+                { id: 'transaction' }
+              );
+            }
+          }}
           disabled={!isPublickey(recipient) || amount.length < 1 || !isAmountValid}
         >
           Transfer

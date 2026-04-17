@@ -108,27 +108,22 @@ const CreateTransaction = () => {
           </Button>
           {multisigAddress && (
             <Button
-              onClick={() =>
-                toast.promise(
-                  importTransaction(
+              onClick={async () => {
+                try {
+                  await importTransaction(
                     tx,
                     connection,
                     multisigAddress,
                     programId.toBase58(),
                     vaultIndex,
                     wallet
-                  ),
-                  {
-                    id: 'transaction',
-                    loading: 'Building transaction...',
-                    success: () => {
-                      setOpen(false);
-                      return 'Transaction proposed.';
-                    },
-                    error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
-                  }
-                )
-              }
+                  );
+                  setOpen(false);
+                  toast.success('Transaction proposed.', { id: 'transaction' });
+                } catch (e) {
+                  toast.error(`Failed to propose: ${formatTransactionError(e)}`, { id: 'transaction' });
+                }
+              }}
             >
               Import
             </Button>

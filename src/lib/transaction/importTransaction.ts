@@ -72,16 +72,19 @@ export const importTransaction = async (
 
     const transaction = new VersionedTransaction(wrappedMessage);
 
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
 
-    const hasSent = await waitForConfirmation(connection, [signature]);
-    if (!hasSent.every((s) => !!s)) {
-      throw `Unable to confirm transaction`;
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
   } catch (error) {
     throw error;
