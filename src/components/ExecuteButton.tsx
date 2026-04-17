@@ -80,6 +80,9 @@ const ExecuteButton = ({
       throw 'Proposal has not reached threshold';
     }
 
+    // Stage 1: waiting for wallet
+    toast.loading('Waiting for wallet approval...', { id: 'execute', duration: Infinity });
+
     const [transactionPda] = multisig.getTransactionPda({
       multisigPda: new PublicKey(multisigPda),
       index: bigIntTransactionIndex,
@@ -183,25 +186,32 @@ const ExecuteButton = ({
 
     const signedTransactions = await wallet.signAllTransactions(transactions);
 
-    const signatures: string[] = [];
     for (let i = 0; i < signedTransactions.length; i++) {
       const label =
         signedTransactions.length > 1 ? ` (${i + 1}/${signedTransactions.length})` : '';
 
+      // Stage 2: sending
+      toast.loading(`Sending transaction${label}...`, { id: 'execute', duration: Infinity });
+
       const signature = await connection.sendRawTransaction(signedTransactions[i].serialize(), {
         skipPreflight: true,
       });
-      signatures.push(signature);
       signaturesRef.current.push(signature);
 
-      toast.info(`Sending${label} ${signature}`, { duration: Infinity });
-      toast.loading(`Confirming${label} ${signature}...`, { duration: Infinity });
+      // Stage 3: confirming — stacks a brief "Sent" announcement alongside the progress toast
+      const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+      toast.info(`Sent${label}: ${signature}`, { duration: 6000 });
+      toast.info(`Confirming${label}: ${shortSig}`, { id: 'execute', duration: Infinity });
 
       const [confirmed] = await waitForConfirmation(connection, [signature]);
       if (!confirmed) {
         throw `Transaction${label} failed or timed out. Check ${signature}`;
       }
     }
+
+    // Stage 4: confirmed
+    toast.success('Transaction executed.', { id: 'execute' });
+
     closeDialog();
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
@@ -241,14 +251,16 @@ const ExecuteButton = ({
         />
         <Button
           disabled={isDisabled}
-          onClick={() =>
-            toast.promise(executeTransaction, {
-              id: 'transaction',
-              loading: 'Loading...',
-              success: 'Transaction executed.',
-              error: (e) => `Failed to execute: ${formatTransactionError(e)}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
-            })
-          }
+          onClick={async () => {
+            try {
+              await executeTransaction();
+            } catch (e) {
+              toast.error(
+                `Failed to execute: ${formatTransactionError(e)}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
+                { id: 'execute' }
+              );
+            }
+          }}
           className="mr-2"
         >
           Execute
