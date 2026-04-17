@@ -1,7 +1,8 @@
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import * as multisig from '@sqds/multisig';
 import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
@@ -12,6 +13,7 @@ import { types as multisigTypes } from '@sqds/multisig';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMultisigData } from '../hooks/useMultisigData';
+import { useAccess } from '../hooks/useAccess';
 import { buildProposalAndApproveIx } from '../lib/multisigUtils';
 
 type ChangeThresholdInputProps = {
@@ -21,10 +23,12 @@ type ChangeThresholdInputProps = {
 
 const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThresholdInputProps) => {
   const { data: multisigConfig } = useMultisig();
+  const hasAccess = useAccess();
   const [threshold, setThreshold] = useState('');
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const queryClient = useQueryClient();
+  const signatureRef = useRef<string>('');
 
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection, programId } = useMultisigData();
@@ -52,7 +56,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
   const changeThreshold = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
-      return;
+      throw 'Wallet not connected';
     }
     const validateError = validateThreshold();
     if (validateError) {
@@ -87,17 +91,26 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
 
     const transaction = new VersionedTransaction(message);
 
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+    signatureRef.current = signature;
+
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    toast.success('Threshold change proposed.', { id: 'transaction' });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['multisig'] }),
+    ]);
   };
   return (
     <div>
@@ -108,16 +121,20 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
         className="mb-3"
       />
       <Button
-        onClick={() =>
-          toast.promise(changeThreshold, {
-            id: 'transaction',
-            loading: 'Loading...',
-            success: 'Threshold change proposed.',
-            error: (e) => `Failed to propose: ${e}`,
-          })
-        }
+        onClick={async () => {
+          try {
+            await changeThreshold();
+          } catch (e) {
+            toast.error(
+              `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+              { id: 'transaction' }
+            );
+          }
+        }}
         disabled={
-          !threshold || (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10))
+          !hasAccess ||
+          !threshold ||
+          (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10))
         }
       >
         Change Threshold

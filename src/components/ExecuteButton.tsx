@@ -16,8 +16,9 @@ import { DialogTrigger } from './ui/dialog';
 import { DialogContent, DialogTitle } from './ui/dialog';
 import { useRef, useState } from 'react';
 import { Input } from './ui/input';
-import { range } from '@/lib/utils';
+import { range, formatTransactionError, isMember } from '@/lib/utils';
 import { useMultisigData } from '@/hooks/useMultisigData';
+import { useMultisig } from '@/hooks/useServices';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 
@@ -32,6 +33,7 @@ type ExecuteButtonProps = {
   proposalStatus: string;
   programId: string;
   isStale: boolean;
+  isAccountClosed: boolean;
 };
 
 const ExecuteButton = ({
@@ -40,6 +42,7 @@ const ExecuteButton = ({
   proposalStatus,
   programId,
   isStale,
+  isAccountClosed,
 }: ExecuteButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
@@ -48,7 +51,16 @@ const ExecuteButton = ({
   const [priorityFeeLamports, setPriorityFeeLamports] = useState<number>(5000);
   const [computeUnitBudget, setComputeUnitBudget] = useState<number>(200_000);
 
-  const isTransactionReady = proposalStatus === 'Approved' && !isStale;
+  const { data: multisigConfig } = useMultisig();
+  const connectedMember = wallet.publicKey
+    ? isMember(wallet.publicKey, multisigConfig?.members ?? [])
+    : undefined;
+  const hasExecutePermission = connectedMember
+    ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Execute)
+    : false;
+
+  const isTransactionReady = !isAccountClosed && proposalStatus === 'Approved' && !isStale;
+  const isDisabled = !wallet.publicKey || !isTransactionReady || !hasExecutePermission;
 
   const { connection } = useMultisigData();
   const signaturesRef = useRef<string[]>([]);
@@ -60,14 +72,16 @@ const ExecuteButton = ({
       throw 'Wallet not connected';
     }
     const member = wallet.publicKey;
-    if (!wallet.signAllTransactions) return;
+    if (!wallet.signAllTransactions) throw 'Connected wallet does not support signing multiple transactions';
     signaturesRef.current = [];
     let bigIntTransactionIndex = BigInt(transactionIndex);
 
     if (!isTransactionReady) {
-      toast.error('Proposal has not reached threshold.');
-      return;
+      throw 'Proposal has not reached threshold';
     }
+
+    // Stage 1: waiting for wallet
+    toast.loading('Waiting for wallet approval...', { id: 'execute', duration: Infinity });
 
     const [transactionPda] = multisig.getTransactionPda({
       multisigPda: new PublicKey(multisigPda),
@@ -172,32 +186,45 @@ const ExecuteButton = ({
 
     const signedTransactions = await wallet.signAllTransactions(transactions);
 
-    const signatures: string[] = [];
     for (let i = 0; i < signedTransactions.length; i++) {
       const label =
         signedTransactions.length > 1 ? ` (${i + 1}/${signedTransactions.length})` : '';
 
+      // Stage 2: sending
+      toast.loading(`Sending transaction${label}...`, { id: 'execute', duration: Infinity });
+
       const signature = await connection.sendRawTransaction(signedTransactions[i].serialize(), {
         skipPreflight: true,
       });
-      signatures.push(signature);
       signaturesRef.current.push(signature);
 
-      toast.loading(`Confirming${label}...`, { id: 'transaction' });
+      // Stage 3: confirming — stacks a brief "Sent" announcement alongside the progress toast
+      const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+      toast.info(`Sent${label}: ${signature}`, { duration: 6000 });
+      toast.info(`Confirming${label}: ${shortSig}`, { id: 'execute', duration: Infinity });
 
       const [confirmed] = await waitForConfirmation(connection, [signature]);
       if (!confirmed) {
         throw `Transaction${label} failed or timed out. Check ${signature}`;
       }
     }
+
+    // Stage 4: confirmed
+    toast.success('Transaction executed.', { id: 'execute' });
+
     closeDialog();
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['multisig'] }),
+      queryClient.invalidateQueries({ queryKey: ['balance'] }),
+      queryClient.invalidateQueries({ queryKey: ['tokenBalances'] }),
+    ]);
   };
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger
-        disabled={!isTransactionReady}
-        className={`mr-2 h-10 px-4 py-2 ${!isTransactionReady ? `bg-primary/50` : `bg-primary hover:bg-primary/90`} rounded-md text-primary-foreground`}
+        disabled={isDisabled}
+        className={`mr-2 h-10 px-4 py-2 ${isDisabled ? `bg-primary/50` : `bg-primary hover:bg-primary/90`} rounded-md text-primary-foreground`}
         onClick={() => setIsOpen(true)}
       >
         Execute
@@ -223,15 +250,17 @@ const ExecuteButton = ({
           value={computeUnitBudget}
         />
         <Button
-          disabled={!isTransactionReady}
-          onClick={() =>
-            toast.promise(executeTransaction, {
-              id: 'transaction',
-              loading: 'Loading...',
-              success: 'Transaction executed.',
-              error: (e) => `Failed to execute: ${e}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
-            })
-          }
+          disabled={isDisabled}
+          onClick={async () => {
+            try {
+              await executeTransaction();
+            } catch (e) {
+              toast.error(
+                `Failed to execute: ${formatTransactionError(e)}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
+                { id: 'execute' }
+              );
+            }
+          }}
           className="mr-2"
         >
           Execute

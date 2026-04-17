@@ -1,7 +1,8 @@
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import * as multisig from '@sqds/multisig';
 import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
@@ -30,12 +31,13 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
+  const signatureRef = useRef<string>('');
   const hasAccess = useAccess();
   const addMember = async () => {
     invariant(multisigConfig, 'invalid multisig conf data');
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
-      return;
+      throw 'Wallet not connected';
     }
     const newMemberKey = new PublicKey(member);
     const memberExists = isMember(newMemberKey, multisigConfig.members);
@@ -75,17 +77,26 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
 
     const transaction = new VersionedTransaction(message);
 
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+    signatureRef.current = signature;
+
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    toast.success('Add member action proposed.', { id: 'transaction' });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['multisig'] }),
+    ]);
   };
   return (
     <div>
@@ -95,14 +106,16 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
         className="mb-3"
       />
       <Button
-        onClick={() =>
-          toast.promise(addMember, {
-            id: 'transaction',
-            loading: 'Loading...',
-            success: 'Add member action proposed.',
-            error: (e) => `Failed to propose: ${e}`,
-          })
-        }
+        onClick={async () => {
+          try {
+            await addMember();
+          } catch (e) {
+            toast.error(
+              `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+              { id: 'transaction' }
+            );
+          }
+        }}
         disabled={!isPublickey(member) || !hasAccess}
       >
         Add Member

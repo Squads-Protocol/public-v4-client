@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import { useMultisigData } from '../hooks/useMultisigData';
 import {
   AddressLookupTableAccount,
@@ -126,7 +127,7 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
             id: 'mksKeySearch',
             loading: 'Loading...',
             success: 'Search finished.',
-            error: (e) => `Failed to propose: ${e}`,
+            error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
           })
         }
         className="mt-4"

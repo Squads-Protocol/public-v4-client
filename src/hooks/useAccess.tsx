@@ -4,13 +4,15 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { isMember } from '@/lib/utils';
 
 export const useAccess = () => {
-  const { data: multisig } = useMultisig();
+  const { data: multisigData } = useMultisig();
   const { publicKey } = useWallet();
-  if (!multisig || !publicKey) {
+  if (!multisigData || !publicKey) {
     return false;
   }
-  // if the pubkeyKey is in members return true
-  const memberExists = isMember(publicKey, multisig.members);
-  // return true if found
-  return !!memberExists;
+  const connectedMember = isMember(publicKey, multisigData.members);
+  if (!connectedMember) return false;
+  return multisig.types.Permissions.has(
+    connectedMember.permissions,
+    multisig.types.Permission.Initiate
+  );
 };

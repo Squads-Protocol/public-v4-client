@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import * as bs58 from 'bs58';
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import { useState } from 'react';
 import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -17,11 +18,13 @@ import { toast } from 'sonner';
 import { simulateEncodedTransaction } from '@/lib/transaction/simulateEncodedTransaction';
 import { importTransaction } from '@/lib/transaction/importTransaction';
 import { useMultisigData } from '@/hooks/useMultisigData';
+import { useAccess } from '@/hooks/useAccess';
 import invariant from 'invariant';
 import { VaultSelector } from './VaultSelector';
 
 const CreateTransaction = () => {
   const wallet = useWallet();
+  const hasAccess = useAccess();
 
   const [tx, setTx] = useState('');
   const [open, setOpen] = useState(false);
@@ -65,8 +68,8 @@ const CreateTransaction = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen} modal={false}>
       <DialogTrigger
-        className={`h-10 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground ${!wallet || !wallet.publicKey ? `bg-primary/50 hover:bg-primary/50` : `hover:bg-primary/90`}`}
-        disabled={!wallet || !wallet.publicKey}
+        className={`h-10 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground ${!hasAccess ? `bg-primary/50 hover:bg-primary/50` : `hover:bg-primary/90`}`}
+        disabled={!hasAccess}
       >
         Import Transaction
       </DialogTrigger>
@@ -97,9 +100,7 @@ const CreateTransaction = () => {
                 id: 'simulation',
                 loading: 'Building simulation...',
                 success: 'Simulation successful.',
-                error: (e) => {
-                  return `${e}`;
-                },
+                error: (e) => formatTransactionError(e),
               });
             }}
           >
@@ -107,27 +108,22 @@ const CreateTransaction = () => {
           </Button>
           {multisigAddress && (
             <Button
-              onClick={() =>
-                toast.promise(
-                  importTransaction(
+              onClick={async () => {
+                try {
+                  await importTransaction(
                     tx,
                     connection,
                     multisigAddress,
                     programId.toBase58(),
                     vaultIndex,
                     wallet
-                  ),
-                  {
-                    id: 'transaction',
-                    loading: 'Building transaction...',
-                    success: () => {
-                      setOpen(false);
-                      return 'Transaction proposed.';
-                    },
-                    error: (e) => `Failed to propose: ${e}`,
-                  }
-                )
-              }
+                  );
+                  setOpen(false);
+                  toast.success('Transaction proposed.', { id: 'transaction' });
+                } catch (e) {
+                  toast.error(`Failed to propose: ${formatTransactionError(e)}`, { id: 'transaction' });
+                }
+              }}
             >
               Import
             </Button>

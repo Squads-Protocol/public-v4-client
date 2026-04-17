@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { Button } from './ui/button';
+import { formatTransactionError } from '@/lib/utils';
 import * as multisig from '@sqds/multisig';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
@@ -29,11 +31,12 @@ const RemoveMemberButton = ({
   const member = new PublicKey(memberKey);
   const queryClient = useQueryClient();
   const { connection } = useMultisigData();
+  const signatureRef = useRef<string>('');
 
   const removeMember = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
-      return;
+      throw 'Wallet not connected';
     }
     let bigIntTransactionIndex = BigInt(transactionIndex);
 
@@ -65,29 +68,40 @@ const RemoveMemberButton = ({
 
     const transaction = new VersionedTransaction(message);
 
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+    signatureRef.current = signature;
+
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    toast.success('Remove member action proposed.', { id: 'transaction' });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['multisig'] }),
+    ]);
   };
   return (
     <Button
       disabled={!isMember}
-      onClick={() =>
-        toast.promise(removeMember, {
-          id: 'transaction',
-          loading: 'Submitting...',
-          success: 'Remove Member action proposed.',
-          error: (e) => `Failed to propose: ${e}`,
-        })
-      }
+      onClick={async () => {
+        try {
+          await removeMember();
+        } catch (e) {
+          toast.error(
+            `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+            { id: 'transaction' }
+          );
+        }
+      }}
     >
       Remove
     </Button>

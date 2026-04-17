@@ -7,7 +7,8 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog';
 import { Button } from './ui/button';
-import { useState } from 'react';
+import { formatTransactionError } from '@/lib/utils';
+import { useState, useRef } from 'react';
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferCheckedInstruction,
@@ -52,6 +53,7 @@ const SendTokens = ({
   const { connection } = useMultisigData();
 
   const queryClient = useQueryClient();
+  const signatureRef = useRef<string>('');
   const parsedAmount = parseFloat(amount);
   const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
   const isMember = useAccess();
@@ -143,19 +145,28 @@ const SendTokens = ({
 
     const transaction = new VersionedTransaction(message);
 
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+    signatureRef.current = signature;
+
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
+    toast.success('Transfer proposed.', { id: 'transaction' });
     setAmount('');
     setRecipient('');
-    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      queryClient.invalidateQueries({ queryKey: ['multisig'] }),
+    ]);
     closeDialog();
   };
 
@@ -197,14 +208,16 @@ const SendTokens = ({
           <p className="text-xs text-red-500">Invalid amount</p>
         )}
         <Button
-          onClick={() =>
-            toast.promise(transfer, {
-              id: 'transaction',
-              loading: 'Loading...',
-              success: 'Transfer proposed.',
-              error: (e) => `Failed to propose: ${e}`,
-            })
-          }
+          onClick={async () => {
+            try {
+              await transfer();
+            } catch (e) {
+              toast.error(
+                `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+                { id: 'transaction' }
+              );
+            }
+          }}
           disabled={!isPublickey(recipient) || amount.length < 1 || !isAmountValid}
         >
           Transfer

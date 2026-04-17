@@ -1,9 +1,10 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import * as multisig from '@sqds/multisig';
+import { formatTransactionError } from '@/lib/utils';
 import {
   AccountMeta,
   PublicKey,
@@ -31,6 +32,7 @@ const CreateProgramUpgradeInput = ({
   transactionIndex,
 }: CreateProgramUpgradeInputProps) => {
   const queryClient = useQueryClient();
+  const signatureRef = useRef<string>('');
   const wallet = useWallet();
   const walletModal = useWalletModal();
 
@@ -137,16 +139,22 @@ const CreateProgramUpgradeInput = ({
 
     const transaction = new VersionedTransaction(message);
 
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+    signatureRef.current = signature;
+
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
+    toast.success('Program upgrade proposed.', { id: 'transaction' });
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
   return (
@@ -164,14 +172,16 @@ const CreateProgramUpgradeInput = ({
         className="mb-3"
       />
       <Button
-        onClick={() =>
-          toast.promise(changeUpgradeAuth, {
-            id: 'transaction',
-            loading: 'Loading...',
-            success: 'Upgrade authority change proposed.',
-            error: (e) => `Failed to propose: ${e}`,
-          })
-        }
+        onClick={async () => {
+          try {
+            await changeUpgradeAuth();
+          } catch (e) {
+            toast.error(
+              `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+              { id: 'transaction' }
+            );
+          }
+        }}
         disabled={
           !programId ||
           !isPublickey(bufferAddress) ||

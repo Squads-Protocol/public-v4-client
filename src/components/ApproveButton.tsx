@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
+import { useMultisig } from '@/hooks/useServices';
+import { isMember, formatTransactionError } from '@/lib/utils';
 
 type ApproveButtonProps = {
   multisigPda: string;
@@ -15,6 +17,8 @@ type ApproveButtonProps = {
   proposalStatus: string;
   programId: string;
   isStale: boolean;
+  approvedMembers: PublicKey[];
+  isAccountClosed: boolean;
 };
 
 const ApproveButton = ({
@@ -23,11 +27,28 @@ const ApproveButton = ({
   proposalStatus,
   programId,
   isStale,
+  approvedMembers,
+  isAccountClosed,
 }: ApproveButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
+  const { data: multisigConfig } = useMultisig();
   const terminalStatuses = ['Rejected', 'Approved', 'Executing', 'Executed', 'Cancelled'];
-  const isDisabled = isStale || terminalStatuses.includes(proposalStatus || 'None');
+  const hasAlreadyApproved =
+    !!wallet.publicKey && approvedMembers.some((k) => k.equals(wallet.publicKey!));
+  const connectedMember = wallet.publicKey
+    ? isMember(wallet.publicKey, multisigConfig?.members ?? [])
+    : undefined;
+  const hasVotePermission = connectedMember
+    ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Vote)
+    : false;
+  const isDisabled =
+    !wallet.publicKey ||
+    isAccountClosed ||
+    isStale ||
+    terminalStatuses.includes(proposalStatus || 'None') ||
+    hasAlreadyApproved ||
+    !hasVotePermission;
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');
@@ -66,33 +87,37 @@ const ApproveButton = ({
       programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
     transaction.add(approveProposalInstruction);
+    toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
+
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: true,
     });
     signatureRef.current = signature;
-    toast.info(`Sending ${signature}`, {
-      duration: Infinity,
-    });
-    toast.loading('Confirming...', {
-      id: 'transaction',
-    });
-    const sent = await waitForConfirmation(connection, [signature]);
-    if (!sent[0]) {
-      throw `Transaction failed or unable to confirm. Check ${signature}`;
+
+    const shortSig = `${signature.slice(0, 8)}...${signature.slice(-4)}`;
+    toast.info(`Sent: ${signature}`, { duration: 6000 });
+    toast.info(`Confirming: ${shortSig}`, { id: 'transaction', duration: Infinity });
+
+    const [confirmed] = await waitForConfirmation(connection, [signature]);
+    if (!confirmed) {
+      throw `Transaction failed or timed out. Check ${signature}`;
     }
+    toast.success('Transaction approved.', { id: 'transaction' });
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
   return (
     <Button
       disabled={isDisabled}
-      onClick={() =>
-        toast.promise(approveProposal, {
-          id: 'transaction',
-          loading: 'Loading...',
-          success: 'Transaction approved.',
-          error: (e) => `Failed to approve: ${e}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
-        })
-      }
+      onClick={async () => {
+        try {
+          await approveProposal();
+        } catch (e) {
+          toast.error(
+            `Failed to approve: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+            { id: 'transaction' }
+          );
+        }
+      }}
       className="mr-2"
     >
       Approve
