@@ -1583,7 +1583,7 @@
     "@tailwindcss/oxide-win32-arm64-msvc" "4.0.9"
     "@tailwindcss/oxide-win32-x64-msvc" "4.0.9"
 
-"@tailwindcss/vite@^4.0.9":
+"@tailwindcss/vite@4.0.9":
   version "4.0.9"
   resolved "https://registry.yarnpkg.com/@tailwindcss/vite/-/vite-4.0.9.tgz#31e707ee7dabecc5a288c77c7504c8454a7add2d"
   integrity sha512-BIKJO+hwdIsN7V6I7SziMZIVHWWMsV/uCQKYEbeiGRDRld+TkqyRRl9+dQ0MCXbhcVr+D9T/qX2E84kT7V281g==
@@ -3259,7 +3259,7 @@ eventemitter3@^5.0.1:
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-5.0.1.tgz#53f5ffd0a492ac800721bb42c66b841de96423c4"
   integrity sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==
 
-events@^3.2.0, events@^3.3.0:
+events@3.3.0, events@^3.2.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/events/-/events-3.3.0.tgz#31a95ad0a924e2d2c419a813aeb2c4e878ea7400"
   integrity sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==
@@ -4021,7 +4021,7 @@ isarray@~1.0.0:
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
   integrity sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==
 
-isbot@4:
+isbot@4.4.0:
   version "4.4.0"
   resolved "https://registry.yarnpkg.com/isbot/-/isbot-4.4.0.tgz#897ce9f2e498de6181027660ca80de8734d1ef81"
   integrity sha512-8ZvOWUA68kyJO4hHJdWjyreq7TYNWTS9y15IzeqVdKxR9pPr3P/3r9AHcoIv9M0Rllkao5qWz2v1lmcyKIVCzQ==
