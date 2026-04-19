@@ -22,48 +22,53 @@ export default function TabNav() {
         className="z-40 hidden h-auto md:fixed md:left-0 md:top-0 md:block md:h-screen md:w-3/12 lg:w-3/12"
         aria-label="Sidebar"
       >
-        <div className="flex h-auto flex-col justify-between overflow-y-auto border-slate-200 bg-slate-200 px-3 py-4 md:h-full md:border-r">
+        <div className="flex h-auto flex-col justify-between overflow-y-auto bg-[#111318] px-3 py-5 md:h-full md:border-r md:border-[#1e2028]">
           <div>
             <Link to="/">
-              <div className="mb-10 flex items-center rounded-lg px-3 py-2 text-slate-900 dark:text-white">
-                <img src="/logo.png" width="150" height="auto" />
+              <div className="mb-8 flex items-center px-3 py-2">
+                <img src="/logo.png" width="140" height="auto" style={{ filter: 'brightness(0) invert(1)' }} />
               </div>
             </Link>
-            <ul className="space-y-2 text-sm font-medium">
-              {tabs.map((tab) => (
-                <li key={tab.route}>
-                  <Link
-                    to={tab.route}
-                    className={`flex items-center rounded-lg px-4 py-3 text-slate-900 ${
-                      (path!.startsWith(`${tab.route}/`) && tab.route !== '/') || tab.route === path
-                        ? 'bg-slate-400'
-                        : 'hover:bg-slate-400'
-                    }`}
-                  >
-                    {tab.icon}
-                    <span className="ml-3 flex-1 whitespace-nowrap text-base text-black">
-                      {tab.name}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-              <li key={'github-link'}>
+            <ul className="space-y-0.5 text-sm font-medium">
+              {tabs.map((tab) => {
+                const isActive =
+                  (path!.startsWith(`${tab.route}/`) && tab.route !== '/') ||
+                  tab.route === path;
+                return (
+                  <li key={tab.route}>
+                    <Link
+                      to={tab.route}
+                      className={`flex items-center rounded-md px-3 py-2.5 transition-colors ${
+                        isActive
+                          ? 'bg-white/[0.08] text-white'
+                          : 'text-slate-400 hover:bg-white/[0.05] hover:text-slate-200'
+                      }`}
+                    >
+                      <span className="[&>svg]:h-4 [&>svg]:w-4">{tab.icon}</span>
+                      <span className="ml-3 flex-1 whitespace-nowrap text-sm">
+                        {tab.name}
+                      </span>
+                      {isActive && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-white/60" />
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+              <li key="github-link" className="pt-1">
                 <Link
-                  key={`github-link`}
                   to="https://github.com/Squads-Protocol/public-v4-client"
                   target="_blank"
                   rel="noreferrer"
-                  className={`flex items-center rounded-lg px-4 py-3 text-slate-900 hover:bg-slate-400`}
+                  className="flex items-center rounded-md px-3 py-2.5 text-slate-500 transition-colors hover:bg-white/[0.05] hover:text-slate-300"
                 >
-                  <Github />
-                  <span className="ml-3 flex-1 whitespace-nowrap text-base text-black">
-                    GitHub Repo
-                  </span>
+                  <span className="[&>svg]:h-4 [&>svg]:w-4"><Github /></span>
+                  <span className="ml-3 flex-1 whitespace-nowrap text-sm">GitHub</span>
                 </Link>
               </li>
             </ul>
           </div>
-          <div>
+          <div className="space-y-2 border-t border-[#1e2028] pt-4">
             <ChangeMultisigFromNav />
             <ConnectWallet />
           </div>
@@ -72,21 +77,28 @@ export default function TabNav() {
 
       <aside
         id="mobile-navbar"
-        className="bg-slate-20 fixed inset-x-0 bottom-0 z-50 block bg-slate-300 p-2 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 block bg-[#111318] border-t border-[#1e2028] p-2 md:hidden"
         aria-label="Mobile navbar"
       >
         <div className="mx-auto mt-1 grid h-full max-w-lg grid-cols-5 font-medium">
-          {tabs.map((tab) => (
-            <Link to={tab.route} key={tab.route} className={`flex justify-center`}>
-              <button
-                type="button"
-                className="group inline-flex flex-col items-center justify-center rounded-md py-2 hover:bg-slate-400"
-              >
-                {tab.icon}
-                <span className="flex-1 whitespace-nowrap text-sm text-slate-900">{tab.name}</span>
-              </button>
-            </Link>
-          ))}
+          {tabs.map((tab) => {
+            const isActive =
+              (path!.startsWith(`${tab.route}/`) && tab.route !== '/') ||
+              tab.route === path;
+            return (
+              <Link to={tab.route} key={tab.route} className="flex justify-center">
+                <button
+                  type="button"
+                  className={`group inline-flex flex-col items-center justify-center rounded-md px-2 py-2 transition-colors ${
+                    isActive ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  {tab.icon}
+                  <span className="mt-1 whitespace-nowrap text-xs">{tab.name}</span>
+                </button>
+              </Link>
+            );
+          })}
         </div>
       </aside>
     </>

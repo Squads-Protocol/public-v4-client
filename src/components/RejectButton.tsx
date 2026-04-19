@@ -124,7 +124,8 @@ const RejectButton = ({
           );
         }
       }}
-      className="mr-2"
+      size="sm"
+      className="w-full sm:w-auto"
     >
       Reject
     </Button>

@@ -61,6 +61,7 @@ export default function TransactionsPage() {
 
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8" />
                   <TableHead>Index</TableHead>
                   <TableHead>Transaction Address</TableHead>
                   <TableHead>Status</TableHead>
