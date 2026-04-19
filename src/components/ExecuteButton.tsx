@@ -224,7 +224,7 @@ const ExecuteButton = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger
         disabled={isDisabled}
-        className={`mr-2 h-10 px-4 py-2 ${isDisabled ? `bg-primary/50` : `bg-primary hover:bg-primary/90`} rounded-md text-primary-foreground`}
+        className={`h-9 px-3 text-sm w-full sm:w-auto ${isDisabled ? `bg-primary/50` : `bg-primary hover:bg-primary/90`} rounded-md text-primary-foreground`}
         onClick={() => setIsOpen(true)}
       >
         Execute
