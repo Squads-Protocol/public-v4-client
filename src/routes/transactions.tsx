@@ -1,3 +1,4 @@
+import { Loader2 } from 'lucide-react';
 import { Table, TableCaption, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Pagination,
@@ -34,7 +35,7 @@ export default function TransactionsPage() {
   const startIndex = totalTransactions - (page - 1) * TRANSACTIONS_PER_PAGE;
   const endIndex = Math.max(startIndex - TRANSACTIONS_PER_PAGE + 1, 1);
 
-  const { data: latestTransactions } = useTransactions(startIndex, endIndex);
+  const { data: latestTransactions, isFetching } = useTransactions(startIndex, endIndex);
 
   const transactions = (latestTransactions || []).map((transaction) => {
     return {
@@ -48,7 +49,10 @@ export default function TransactionsPage() {
       <Suspense fallback={<div>Loading ...</div>}>
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Transactions</h1>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              Transactions
+              {isFetching && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+            </h1>
             <CreateTransaction />
           </div>
 

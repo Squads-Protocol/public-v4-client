@@ -12,7 +12,7 @@ import { WalletContextState } from '@solana/wallet-adapter-react';
 import { toast } from 'sonner';
 import { loadLookupTables } from './getAccountsForSimulation';
 import { waitForConfirmation } from '~/lib/transactionConfirmation';
-import { buildProposalAndApproveIx } from '~/lib/multisigUtils';
+import { buildProposalIx } from '~/lib/multisigUtils';
 
 export const importTransaction = async (
   tx: string,
@@ -55,7 +55,7 @@ export const importTransaction = async (
       vaultIndex: vaultIndex,
       programId: resolvedProgramId,
     });
-    const [proposalIx, approveIx] = buildProposalAndApproveIx(
+    const proposalIx = buildProposalIx(
       new PublicKey(multisigPda),
       wallet.publicKey,
       transactionIndexBN,
@@ -65,7 +65,7 @@ export const importTransaction = async (
     const blockhash = (await connection.getLatestBlockhash()).blockhash;
 
     const wrappedMessage = new TransactionMessage({
-      instructions: [multisigTransactionIx, proposalIx, approveIx],
+      instructions: [multisigTransactionIx, proposalIx],
       payerKey: wallet.publicKey,
       recentBlockhash: blockhash,
     }).compileToV0Message();

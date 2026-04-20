@@ -87,8 +87,7 @@ function TransactionRowItem({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const statusKind = transaction.proposal?.status.__kind;
-  const isExpandable =
-    transaction.transactionExists && !EOL_STATUSES.has(statusKind ?? '');
+  const isExpandable = transaction.transactionExists;
 
   const status = !transaction.transactionExists
     ? 'Closed'
