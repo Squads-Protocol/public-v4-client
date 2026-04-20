@@ -5,6 +5,13 @@
 
 * **lockfile:** updated lockfile ([c8e1b4a](https://github.com/Squads-Protocol/public-v4-client/commit/c8e1b4a3d209b7c1c3cfc4d9e7edb8e187e22833))
 
+## [1.3.0](https://github.com/Squads-Protocol/public-v4-client/compare/v1.2.5...v1.3.0) (2026-04-20)
+
+
+### Features
+
+* **detail:** show detailed breakdown + style ([#36](https://github.com/Squads-Protocol/public-v4-client/issues/36)) ([48f81a5](https://github.com/Squads-Protocol/public-v4-client/commit/48f81a512304c8f41ca8382768c11585b238b0df))
+
 ## [1.2.5](https://github.com/Squads-Protocol/public-v4-client/compare/v1.2.4...v1.2.5) (2026-04-17)
 
 
