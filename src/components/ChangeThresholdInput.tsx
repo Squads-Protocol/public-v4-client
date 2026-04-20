@@ -12,6 +12,7 @@ import invariant from 'invariant';
 import { types as multisigTypes } from '@sqds/multisig';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useAccess } from '../hooks/useAccess';
 import { buildProposalIx } from '../lib/multisigUtils';
@@ -28,6 +29,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const signatureRef = useRef<string>('');
 
   const bigIntTransactionIndex = BigInt(transactionIndex);
@@ -106,11 +108,12 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Threshold change proposed.', { id: 'transaction' });
+    toast.success(`Threshold change proposed. (${signature})`, { id: 'transaction' });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['multisig'] }),
     ]);
+    navigate('/transactions');
   };
   return (
     <div>

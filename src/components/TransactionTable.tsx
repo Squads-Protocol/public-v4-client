@@ -3,6 +3,7 @@ import { PublicKey } from '@solana/web3.js';
 import { useState } from 'react';
 import { Eye } from 'lucide-react';
 import ApproveButton from './ApproveButton';
+import CancelButton from './CancelButton';
 import ExecuteButton from './ExecuteButton';
 import RejectButton from './RejectButton';
 import { TableBody, TableCell, TableRow } from './ui/table';
@@ -161,26 +162,31 @@ function ActionButtons({
   rejectedMembers,
   isAccountClosed,
 }: ActionButtonsProps) {
+  const isApproved = proposalStatus === 'Approved';
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
-      <ApproveButton
-        multisigPda={multisigPda}
-        transactionIndex={transactionIndex}
-        proposalStatus={proposalStatus}
-        programId={programId}
-        isStale={isStale}
-        approvedMembers={approvedMembers}
-        isAccountClosed={isAccountClosed}
-      />
-      <RejectButton
-        multisigPda={multisigPda}
-        transactionIndex={transactionIndex}
-        proposalStatus={proposalStatus}
-        programId={programId}
-        isStale={isStale}
-        rejectedMembers={rejectedMembers}
-        isAccountClosed={isAccountClosed}
-      />
+      {!isApproved && (
+        <>
+          <ApproveButton
+            multisigPda={multisigPda}
+            transactionIndex={transactionIndex}
+            proposalStatus={proposalStatus}
+            programId={programId}
+            isStale={isStale}
+            approvedMembers={approvedMembers}
+            isAccountClosed={isAccountClosed}
+          />
+          <RejectButton
+            multisigPda={multisigPda}
+            transactionIndex={transactionIndex}
+            proposalStatus={proposalStatus}
+            programId={programId}
+            isStale={isStale}
+            rejectedMembers={rejectedMembers}
+            isAccountClosed={isAccountClosed}
+          />
+        </>
+      )}
       <ExecuteButton
         multisigPda={multisigPda}
         transactionIndex={transactionIndex}
@@ -189,6 +195,16 @@ function ActionButtons({
         isStale={isStale}
         isAccountClosed={isAccountClosed}
       />
+      {isApproved && (
+        <CancelButton
+          multisigPda={multisigPda}
+          transactionIndex={transactionIndex}
+          proposalStatus={proposalStatus}
+          programId={programId}
+          isStale={isStale}
+          isAccountClosed={isAccountClosed}
+        />
+      )}
     </div>
   );
 }

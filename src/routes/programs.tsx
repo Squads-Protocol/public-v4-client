@@ -106,7 +106,7 @@ const ProgramsPage = () => {
               <div className="flex-1">
                 <Card className="h-full">
                   <CardHeader>
-                    <CardTitle>Change program Upgrade authority</CardTitle>
+                    <CardTitle>Change Program Upgrade Authority</CardTitle>
                     <CardDescription>
                       Change the upgrade authority of one of your programs.
                     </CardDescription>

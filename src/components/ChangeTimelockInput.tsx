@@ -1,53 +1,58 @@
-import { useRef } from 'react';
-import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { Button } from './ui/button';
 import { formatTransactionError } from '@/lib/utils';
-import * as multisig from '@sqds/multisig';
+import { Input } from './ui/input';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useState, useRef } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import * as multisig from '@sqds/multisig';
+import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { toast } from 'sonner';
-import { useAccess } from '../hooks/useAccess';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useMultisigData } from '../hooks/useMultisigData';
+import { useAccess } from '../hooks/useAccess';
 import { buildProposalIx } from '../lib/multisigUtils';
 
-type RemoveMemberButtonProps = {
+const MAX_TIME_LOCK = 3 * 30 * 24 * 60 * 60; // 7,776,000 seconds (3 months)
+
+type ChangeTimelockInputProps = {
   multisigPda: string;
   transactionIndex: number;
-  memberKey: string;
-  programId: string;
+  currentTimeLock: number;
 };
 
-const RemoveMemberButton = ({
+const ChangeTimelockInput = ({
   multisigPda,
   transactionIndex,
-  memberKey,
-  programId,
-}: RemoveMemberButtonProps) => {
+  currentTimeLock,
+}: ChangeTimelockInputProps) => {
+  const [seconds, setSeconds] = useState('');
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const isMember = useAccess();
-  const member = new PublicKey(memberKey);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { connection } = useMultisigData();
   const signatureRef = useRef<string>('');
+  const bigIntTransactionIndex = BigInt(transactionIndex);
+  const { connection, programId } = useMultisigData();
+  const hasAccess = useAccess();
 
-  const removeMember = async () => {
+  const parsedSeconds = parseInt(seconds, 10);
+  const isValid =
+    !isNaN(parsedSeconds) && parsedSeconds >= 0 && parsedSeconds <= MAX_TIME_LOCK;
+
+  const changeTimelock = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
       throw 'Wallet not connected';
     }
-    let bigIntTransactionIndex = BigInt(transactionIndex);
 
-    const removeMemberIx = multisig.instructions.configTransactionCreate({
+    const changeTimelockIx = multisig.instructions.configTransactionCreate({
       multisigPda: new PublicKey(multisigPda),
       actions: [
         {
-          __kind: 'RemoveMember',
-          oldMember: member,
+          __kind: 'SetTimeLock',
+          newTimeLock: parsedSeconds,
         },
       ],
       creator: wallet.publicKey,
@@ -59,11 +64,11 @@ const RemoveMemberButton = ({
       new PublicKey(multisigPda),
       wallet.publicKey,
       bigIntTransactionIndex,
-      programId ? new PublicKey(programId) : multisig.PROGRAM_ID
+      programId
     );
 
     const message = new TransactionMessage({
-      instructions: [removeMemberIx, proposalIx],
+      instructions: [changeTimelockIx, proposalIx],
       payerKey: wallet.publicKey,
       recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
     }).compileToV0Message();
@@ -85,31 +90,43 @@ const RemoveMemberButton = ({
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success(`Remove member action proposed. (${signature})`, { id: 'transaction' });
+    toast.success(`Timelock change proposed. (${signature})`, { id: 'transaction' });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['multisig'] }),
     ]);
     navigate('/transactions');
   };
+
   return (
-    <Button
-      size="sm"
-      disabled={!isMember}
-      onClick={async () => {
-        try {
-          await removeMember();
-        } catch (e) {
-          toast.error(
-            `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
-            { id: 'transaction' }
-          );
+    <div>
+      <Input
+        placeholder={currentTimeLock.toString()}
+        type="number"
+        min={0}
+        max={MAX_TIME_LOCK}
+        onChange={(e) => setSeconds(e.target.value.trim())}
+        className="mb-3"
+      />
+      <Button
+        onClick={async () => {
+          try {
+            await changeTimelock();
+          } catch (e) {
+            toast.error(
+              `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+              { id: 'transaction' }
+            );
+          }
+        }}
+        disabled={
+          !hasAccess || !seconds || !isValid || parsedSeconds === currentTimeLock
         }
-      }}
-    >
-      Remove
-    </Button>
+      >
+        Change Timelock
+      </Button>
+    </div>
   );
 };
 
-export default RemoveMemberButton;
+export default ChangeTimelockInput;

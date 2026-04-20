@@ -15,6 +15,7 @@ import { isMember } from '../lib/utils';
 import invariant from 'invariant';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { buildProposalIx } from '@/lib/multisigUtils';
 
 type AddMemberInputProps = {
@@ -23,14 +24,22 @@ type AddMemberInputProps = {
   programId: string;
 };
 
+const PERMISSIONS = [
+  { label: 'Initiate', value: 1 },
+  { label: 'Vote', value: 2 },
+  { label: 'Execute', value: 4 },
+] as const;
+
 const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberInputProps) => {
   const [member, setMember] = useState('');
+  const [permMask, setPermMask] = useState(7);
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const { data: multisigConfig } = useMultisig();
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const signatureRef = useRef<string>('');
   const hasAccess = useAccess();
   const addMember = async () => {
@@ -52,7 +61,7 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
           newMember: {
             key: newMemberKey,
             permissions: {
-              mask: 7,
+              mask: permMask,
             },
           },
         },
@@ -92,34 +101,53 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Add member action proposed.', { id: 'transaction' });
+    toast.success(`Add member action proposed. (${signature})`, { id: 'transaction' });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['multisig'] }),
     ]);
+    navigate('/transactions');
   };
   return (
-    <div>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
       <Input
         placeholder="Member Public Key"
         onChange={(e) => setMember(e.target.value.trim())}
-        className="mb-3"
+        className="w-full sm:flex-1"
       />
-      <Button
-        onClick={async () => {
-          try {
-            await addMember();
-          } catch (e) {
-            toast.error(
-              `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
-              { id: 'transaction' }
-            );
-          }
-        }}
-        disabled={!isPublickey(member) || !hasAccess}
-      >
-        Add Member
-      </Button>
+      <div className="flex items-center gap-3">
+        <div className="flex shrink-0 gap-3">
+          {PERMISSIONS.map(({ label, value }) => (
+            <label key={label} className="flex cursor-pointer items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                checked={(permMask & value) !== 0}
+                onChange={(e) =>
+                  setPermMask((prev) => (e.target.checked ? prev | value : prev & ~value))
+                }
+                className="h-3.5 w-3.5 accent-primary"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <Button
+          size="sm"
+          onClick={async () => {
+            try {
+              await addMember();
+            } catch (e) {
+              toast.error(
+                `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+                { id: 'transaction' }
+              );
+            }
+          }}
+          disabled={!isPublickey(member) || !hasAccess || permMask === 0}
+        >
+          Add
+        </Button>
+      </div>
     </div>
   );
 };
