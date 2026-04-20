@@ -24,7 +24,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <Wallet>
         <HashRouter>
-          <div className="flex h-screen min-w-full flex-col bg-white md:flex-row">
+          <div className="flex h-screen min-w-full flex-col bg-background md:flex-row">
             <Suspense>
               <TabNav />
             </Suspense>

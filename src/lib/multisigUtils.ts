@@ -1,13 +1,13 @@
 import * as multisig from '@sqds/multisig';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 
-export function buildProposalAndApproveIx(
+export function buildProposalIx(
   multisigPda: PublicKey,
   member: PublicKey,
   transactionIndex: bigint,
   programId: PublicKey
-): [TransactionInstruction, TransactionInstruction] {
-  const proposalIx = multisig.instructions.proposalCreate({
+): TransactionInstruction {
+  return multisig.instructions.proposalCreate({
     multisigPda,
     creator: member,
     isDraft: false,
@@ -15,11 +15,4 @@ export function buildProposalAndApproveIx(
     rentPayer: member,
     programId,
   });
-  const approveIx = multisig.instructions.proposalApprove({
-    multisigPda,
-    member,
-    transactionIndex,
-    programId,
-  });
-  return [proposalIx, approveIx];
 }

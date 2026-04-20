@@ -8,17 +8,20 @@ WORKDIR /app
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 # Ensure consistent timestamps for deterministic builds
-ENV NODE_ENV=production
 ENV SOURCE_DATE_EPOCH=315532800
 
 # Copy dependencies first (for better caching)
 COPY package.json yarn.lock ./
 
-# Install dependencies in a reproducible way
+# Install dependencies in a reproducible way (NODE_ENV must not be production here
+# or yarn will skip devDependencies like webpack and ts-loader)
 RUN yarn install --frozen-lockfile --non-interactive --check-files --ignore-scripts
 
 # Copy the full source code after dependencies are cached
 COPY . .
+
+# Set production env only for the build step, not for install
+ENV NODE_ENV=production
 
 # Build the application using Webpack
 RUN yarn build

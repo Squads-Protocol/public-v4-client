@@ -10,7 +10,7 @@ import { useAccess } from '../hooks/useAccess';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMultisigData } from '../hooks/useMultisigData';
-import { buildProposalAndApproveIx } from '../lib/multisigUtils';
+import { buildProposalIx } from '../lib/multisigUtils';
 
 type RemoveMemberButtonProps = {
   multisigPda: string;
@@ -53,7 +53,7 @@ const RemoveMemberButton = ({
       rentPayer: wallet.publicKey,
       programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
-    const [proposalIx, approveIx] = buildProposalAndApproveIx(
+    const proposalIx = buildProposalIx(
       new PublicKey(multisigPda),
       wallet.publicKey,
       bigIntTransactionIndex,
@@ -61,7 +61,7 @@ const RemoveMemberButton = ({
     );
 
     const message = new TransactionMessage({
-      instructions: [removeMemberIx, proposalIx, approveIx],
+      instructions: [removeMemberIx, proposalIx],
       payerKey: wallet.publicKey,
       recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
     }).compileToV0Message();

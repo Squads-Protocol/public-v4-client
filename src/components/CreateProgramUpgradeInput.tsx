@@ -20,7 +20,7 @@ import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
-import { buildProposalAndApproveIx } from '../lib/multisigUtils';
+import { buildProposalIx } from '../lib/multisigUtils';
 
 type CreateProgramUpgradeInputProps = {
   programInfos: SimplifiedProgramInfo;
@@ -124,7 +124,7 @@ const CreateProgramUpgradeInput = ({
       vaultIndex: vaultIndex,
       programId,
     });
-    const [proposalIx, approveIx] = buildProposalAndApproveIx(
+    const proposalIx = buildProposalIx(
       multisigPda,
       wallet.publicKey,
       bigIntTransactionIndex,
@@ -132,7 +132,7 @@ const CreateProgramUpgradeInput = ({
     );
 
     const message = new TransactionMessage({
-      instructions: [multisigTransactionIx, proposalIx, approveIx],
+      instructions: [multisigTransactionIx, proposalIx],
       payerKey: wallet.publicKey,
       recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
     }).compileToV0Message();

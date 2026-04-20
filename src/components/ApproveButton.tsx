@@ -118,7 +118,8 @@ const ApproveButton = ({
           );
         }
       }}
-      className="mr-2"
+      size="sm"
+      className="w-full sm:w-auto"
     >
       Approve
     </Button>

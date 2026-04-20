@@ -26,7 +26,7 @@ import { useMultisigData } from '~/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAccess } from '../hooks/useAccess';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
-import { buildProposalAndApproveIx } from '~/lib/multisigUtils';
+import { buildProposalIx } from '~/lib/multisigUtils';
 
 type SendTokensProps = {
   tokenAccount: string;
@@ -130,7 +130,7 @@ const SendTokens = ({
       rentPayer: wallet.publicKey,
       vaultIndex: vaultIndex,
     });
-    const [proposalIx, approveIx] = buildProposalAndApproveIx(
+    const proposalIx = buildProposalIx(
       new PublicKey(multisigPda),
       wallet.publicKey,
       transactionIndexBN,
@@ -138,7 +138,7 @@ const SendTokens = ({
     );
 
     const message = new TransactionMessage({
-      instructions: [multisigTransactionIx, proposalIx, approveIx],
+      instructions: [multisigTransactionIx, proposalIx],
       payerKey: wallet.publicKey,
       recentBlockhash: blockhash,
     }).compileToV0Message();
