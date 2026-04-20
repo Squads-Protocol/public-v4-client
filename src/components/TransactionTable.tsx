@@ -1,7 +1,7 @@
 import * as multisig from '@sqds/multisig';
 import { PublicKey } from '@solana/web3.js';
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import ApproveButton from './ApproveButton';
 import ExecuteButton from './ExecuteButton';
 import RejectButton from './RejectButton';
@@ -100,17 +100,18 @@ function TransactionRowItem({
       <TableRow>
         <TableCell className="w-8 pr-0">
           {isExpandable && (
-            <button
-              onClick={() => setIsExpanded((v) => !v)}
-              className="flex items-center justify-center rounded p-1 hover:bg-muted transition-colors"
-              aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
-            >
-              <ChevronDown
-                className={cn('h-4 w-4 text-muted-foreground transition-transform duration-200', {
-                  'rotate-180': isExpanded,
-                })}
-              />
-            </button>
+            <div className="relative group w-fit">
+              <button
+                onClick={() => setIsExpanded((v) => !v)}
+                className="flex items-center justify-center rounded p-1 hover:bg-muted transition-colors"
+                aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+              >
+                <Eye className={cn('h-4 w-4 transition-colors', isExpanded ? 'text-foreground' : 'text-muted-foreground')} />
+              </button>
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1 px-2 py-1 text-xs bg-popover text-popover-foreground rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                View details
+              </div>
+            </div>
           )}
         </TableCell>
         <TableCell>{Number(transaction.index)}</TableCell>
