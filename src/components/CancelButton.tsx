@@ -17,6 +17,7 @@ type CancelButtonProps = {
   proposalStatus: string;
   programId: string;
   isAccountClosed: boolean;
+  cancelledMembers: PublicKey[];
 };
 
 const CancelButton = ({
@@ -25,10 +26,11 @@ const CancelButton = ({
   proposalStatus,
   programId,
   isAccountClosed,
+  cancelledMembers,
 }: CancelButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const { isDisabled } = useCancelButtonState({ proposalStatus, isAccountClosed });
+  const { isDisabled } = useCancelButtonState({ proposalStatus, isAccountClosed, cancelledMembers });
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');

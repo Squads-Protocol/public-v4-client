@@ -120,9 +120,11 @@ export function useExecuteButtonState({
 export function useCancelButtonState({
   proposalStatus,
   isAccountClosed,
+  cancelledMembers,
 }: {
   proposalStatus: string;
   isAccountClosed: boolean;
+  cancelledMembers: PublicKey[];
 }) {
   const { publicKey } = useWallet();
   const { data: multisigConfig } = useMultisig();
@@ -130,8 +132,9 @@ export function useCancelButtonState({
   const hasVotePermission = connectedMember
     ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Vote)
     : false;
+  const hasAlreadyCancelled = !!publicKey && cancelledMembers.some((k) => k.equals(publicKey));
 
   return {
-    isDisabled: !publicKey || isAccountClosed || proposalStatus !== 'Approved' || !hasVotePermission,
+    isDisabled: !publicKey || isAccountClosed || proposalStatus !== 'Approved' || !hasVotePermission || hasAlreadyCancelled,
   };
 }

@@ -23,6 +23,7 @@ interface ActionButtonsProps {
   isStale: boolean;
   approvedMembers: PublicKey[];
   rejectedMembers: PublicKey[];
+  cancelledMembers: PublicKey[];
   isAccountClosed: boolean;
   approvedAt: number | undefined;
   kind: TransactionKind;
@@ -96,9 +97,11 @@ function TransactionRowItem({
   const statusKind = transaction.proposal?.status.__kind;
   const isExpandable = transaction.transactionExists;
 
+  // Vault and batch can execute even when stale+Approved; config cannot (program rejects it).
+  const executableWhenStale = statusKind === 'Approved' && transaction.kind !== 'config';
   const status = !transaction.transactionExists
     ? 'Closed'
-    : stale
+    : stale && !executableWhenStale
       ? '(stale)'
       : statusKind || 'None';
 
@@ -154,6 +157,7 @@ function TransactionRowItem({
             isStale={stale}
             approvedMembers={transaction.proposal?.approved ?? []}
             rejectedMembers={transaction.proposal?.rejected ?? []}
+            cancelledMembers={transaction.proposal?.cancelled ?? []}
             isAccountClosed={!transaction.transactionExists}
             approvedAt={transaction.approvedAt}
             kind={transaction.kind}
@@ -182,6 +186,7 @@ function ActionButtons({
   isStale,
   approvedMembers,
   rejectedMembers,
+  cancelledMembers,
   isAccountClosed,
   approvedAt,
   kind,
@@ -229,6 +234,7 @@ function ActionButtons({
           proposalStatus={proposalStatus}
           programId={programId}
           isAccountClosed={isAccountClosed}
+          cancelledMembers={cancelledMembers}
         />
       )}
     </div>
