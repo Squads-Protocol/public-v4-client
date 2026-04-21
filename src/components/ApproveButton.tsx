@@ -1,7 +1,7 @@
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { Button } from './ui/button';
 import * as multisig from '@sqds/multisig';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { toast } from 'sonner';
@@ -36,6 +36,7 @@ const ApproveButton = ({
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');
+  const [isPending, setIsPending] = useState(false);
 
   const approveProposal = async () => {
     if (!wallet.publicKey) {
@@ -91,8 +92,9 @@ const ApproveButton = ({
   };
   return (
     <Button
-      disabled={isDisabled}
+      disabled={isDisabled || isPending}
       onClick={async () => {
+        setIsPending(true);
         try {
           await approveProposal();
         } catch (e) {
@@ -100,6 +102,8 @@ const ApproveButton = ({
             `Failed to approve: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
             { id: 'transaction' }
           );
+        } finally {
+          setIsPending(false);
         }
       }}
       size="sm"

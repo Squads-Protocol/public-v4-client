@@ -1,7 +1,7 @@
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { Button } from './ui/button';
 import * as multisig from '@sqds/multisig';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { toast } from 'sonner';
@@ -34,6 +34,7 @@ const CancelButton = ({
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');
+  const [isPending, setIsPending] = useState(false);
 
   const cancelProposal = async () => {
     if (!wallet.publicKey) {
@@ -69,8 +70,9 @@ const CancelButton = ({
   return (
     <Button
       variant="destructive"
-      disabled={isDisabled}
+      disabled={isDisabled || isPending}
       onClick={async () => {
+        setIsPending(true);
         try {
           await cancelProposal();
         } catch (e) {
@@ -78,6 +80,8 @@ const CancelButton = ({
             `Failed to cancel: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
             { id: 'transaction' }
           );
+        } finally {
+          setIsPending(false);
         }
       }}
       size="sm"

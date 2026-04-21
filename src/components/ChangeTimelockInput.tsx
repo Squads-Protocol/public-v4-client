@@ -33,6 +33,7 @@ const ChangeTimelockInput = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const signatureRef = useRef<string>('');
+  const [isPending, setIsPending] = useState(false);
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection, programId } = useMultisigData();
   const hasAccess = useAccess();
@@ -110,6 +111,7 @@ const ChangeTimelockInput = ({
       />
       <Button
         onClick={async () => {
+          setIsPending(true);
           try {
             await changeTimelock();
           } catch (e) {
@@ -117,10 +119,12 @@ const ChangeTimelockInput = ({
               `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
               { id: 'transaction' }
             );
+          } finally {
+            setIsPending(false);
           }
         }}
         disabled={
-          !hasAccess || !seconds || !isValid || parsedSeconds === currentTimeLock
+          !hasAccess || !seconds || !isValid || parsedSeconds === currentTimeLock || isPending
         }
       >
         Change Timelock

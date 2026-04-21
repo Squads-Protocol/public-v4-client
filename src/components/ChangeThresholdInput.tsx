@@ -31,6 +31,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const signatureRef = useRef<string>('');
+  const [isPending, setIsPending] = useState(false);
 
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection, programId } = useMultisigData();
@@ -125,6 +126,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
       />
       <Button
         onClick={async () => {
+          setIsPending(true);
           try {
             await changeThreshold();
           } catch (e) {
@@ -132,12 +134,15 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
               `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
               { id: 'transaction' }
             );
+          } finally {
+            setIsPending(false);
           }
         }}
         disabled={
           !hasAccess ||
           !threshold ||
-          (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10))
+          (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10)) ||
+          isPending
         }
       >
         Change Threshold

@@ -62,6 +62,7 @@ const ExecuteButton = ({
 }: ExecuteButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
+  const [isPending, setIsPending] = useState(false);
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const [priorityFeeLamports, setPriorityFeeLamports] = useState<number>(5000);
@@ -252,8 +253,9 @@ const ExecuteButton = ({
           value={computeUnitBudget}
         />
         <Button
-          disabled={isDisabled}
+          disabled={isDisabled || isPending}
           onClick={async () => {
+            setIsPending(true);
             try {
               await executeTransaction();
             } catch (e) {
@@ -261,6 +263,8 @@ const ExecuteButton = ({
                 `Failed to execute: ${formatTransactionError(e)}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
                 { id: 'execute' }
               );
+            } finally {
+              setIsPending(false);
             }
           }}
           className="mr-2 bg-green-600 hover:bg-green-700 text-white"

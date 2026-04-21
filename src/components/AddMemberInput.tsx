@@ -41,6 +41,7 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const signatureRef = useRef<string>('');
+  const [isPending, setIsPending] = useState(false);
   const hasAccess = useAccess();
   const addMember = async () => {
     invariant(multisigConfig, 'invalid multisig conf data');
@@ -134,6 +135,7 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
         <Button
           size="sm"
           onClick={async () => {
+            setIsPending(true);
             try {
               await addMember();
             } catch (e) {
@@ -141,9 +143,11 @@ const AddMemberInput = ({ multisigPda, transactionIndex, programId }: AddMemberI
                 `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
                 { id: 'transaction' }
               );
+            } finally {
+              setIsPending(false);
             }
           }}
-          disabled={!isPublickey(member) || !hasAccess || permMask === 0}
+          disabled={!isPublickey(member) || !hasAccess || permMask === 0 || isPending}
         >
           Add
         </Button>

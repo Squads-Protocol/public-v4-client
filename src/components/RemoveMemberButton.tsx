@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { Button } from './ui/button';
 import { formatTransactionError } from '@/lib/utils';
@@ -34,6 +34,7 @@ const RemoveMemberButton = ({
   const navigate = useNavigate();
   const { connection } = useMultisigData();
   const signatureRef = useRef<string>('');
+  const [isPending, setIsPending] = useState(false);
 
   const removeMember = async () => {
     if (!wallet.publicKey) {
@@ -95,8 +96,9 @@ const RemoveMemberButton = ({
   return (
     <Button
       size="sm"
-      disabled={!isMember}
+      disabled={!isMember || isPending}
       onClick={async () => {
+        setIsPending(true);
         try {
           await removeMember();
         } catch (e) {
@@ -104,6 +106,8 @@ const RemoveMemberButton = ({
             `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
             { id: 'transaction' }
           );
+        } finally {
+          setIsPending(false);
         }
       }}
     >
