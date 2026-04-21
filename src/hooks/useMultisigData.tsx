@@ -14,7 +14,7 @@ export const useMultisigData = () => {
 
   // Ensure we have a valid RPC URL (fallback to mainnet-beta)
   const effectiveRpcUrl = rpcUrl || clusterApiUrl('mainnet-beta');
-  const connection = useMemo(() => new Connection(effectiveRpcUrl), [effectiveRpcUrl]);
+  const connection = useMemo(() => new Connection(effectiveRpcUrl, 'confirmed'), [effectiveRpcUrl]);
 
   // Compute programId safely
   const programId = useMemo(
