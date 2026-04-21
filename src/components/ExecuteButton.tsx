@@ -16,11 +16,12 @@ import { DialogTrigger } from './ui/dialog';
 import { DialogContent, DialogTitle } from './ui/dialog';
 import { useRef, useState } from 'react';
 import { Input } from './ui/input';
-import { range, formatTransactionError, isMember } from '@/lib/utils';
+import { range, formatTransactionError } from '@/lib/utils';
 import { useMultisigData } from '@/hooks/useMultisigData';
-import { useMultisig } from '@/hooks/useServices';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
+import { useExecuteButtonState } from '@/hooks/useProposalActions';
+import type { TransactionKind } from '@/hooks/useServices';
 
 type WithALT = {
   instruction: TransactionInstruction;
@@ -34,6 +35,8 @@ type ExecuteButtonProps = {
   programId: string;
   isStale: boolean;
   isAccountClosed: boolean;
+  approvedAt: number | undefined;
+  kind: TransactionKind;
 };
 
 const ExecuteButton = ({
@@ -43,6 +46,8 @@ const ExecuteButton = ({
   programId,
   isStale,
   isAccountClosed,
+  approvedAt,
+  kind,
 }: ExecuteButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
@@ -51,16 +56,7 @@ const ExecuteButton = ({
   const [priorityFeeLamports, setPriorityFeeLamports] = useState<number>(5000);
   const [computeUnitBudget, setComputeUnitBudget] = useState<number>(200_000);
 
-  const { data: multisigConfig } = useMultisig();
-  const connectedMember = wallet.publicKey
-    ? isMember(wallet.publicKey, multisigConfig?.members ?? [])
-    : undefined;
-  const hasExecutePermission = connectedMember
-    ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Execute)
-    : false;
-
-  const isTransactionReady = !isAccountClosed && proposalStatus === 'Approved' && !isStale;
-  const isDisabled = !wallet.publicKey || !isTransactionReady || !hasExecutePermission;
+  const { isDisabled } = useExecuteButtonState({ proposalStatus, isStale, isAccountClosed, approvedAt, kind });
 
   const { connection } = useMultisigData();
   const signaturesRef = useRef<string[]>([]);
@@ -75,10 +71,6 @@ const ExecuteButton = ({
     if (!wallet.signAllTransactions) throw 'Connected wallet does not support signing multiple transactions';
     signaturesRef.current = [];
     let bigIntTransactionIndex = BigInt(transactionIndex);
-
-    if (!isTransactionReady) {
-      throw 'Proposal has not reached threshold';
-    }
 
     // Stage 1: waiting for wallet
     toast.loading('Waiting for wallet approval...', { id: 'execute', duration: Infinity });
@@ -224,7 +216,7 @@ const ExecuteButton = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger
         disabled={isDisabled}
-        className={`h-9 px-3 text-sm w-full sm:w-auto ${isDisabled ? `bg-primary/50` : `bg-primary hover:bg-primary/90`} rounded-md text-primary-foreground`}
+        className={`h-9 px-3 text-sm w-full sm:w-auto ${isDisabled ? `bg-green-600/50` : `bg-green-600 hover:bg-green-700`} rounded-md text-white`}
         onClick={() => setIsOpen(true)}
       >
         Execute
@@ -261,7 +253,7 @@ const ExecuteButton = ({
               );
             }
           }}
-          className="mr-2"
+          className="mr-2 bg-green-600 hover:bg-green-700 text-white"
         >
           Execute
         </Button>

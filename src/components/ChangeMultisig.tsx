@@ -1,19 +1,20 @@
-import { Card, CardContent } from './ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from '~/components/ui/button';
 import { useMultisigAddress } from '~/hooks/useMultisigAddress';
 
 export function ChangeMultisig() {
-  const { setMultisigAddress } = useMultisigAddress(); // Use React Query hook
-
-  const handleChangeMultisig = () => {
-    setMultisigAddress.mutate(null); // Wipes out the stored multisig address
-  };
+  const { setMultisigAddress } = useMultisigAddress();
 
   return (
-    <Card className="my-3 w-fit pt-5">
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle>Change Multisig</CardTitle>
+        <CardDescription>Use a different Squad Multisig</CardDescription>
+      </CardHeader>
       <CardContent>
-        <div>Switch to a different Squad</div>
-        <Button onClick={handleChangeMultisig}>Change</Button>
+        <Button className="w-full" onClick={() => setMultisigAddress.mutate(null)}>
+          Change
+        </Button>
       </CardContent>
     </Card>
   );

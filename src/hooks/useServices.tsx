@@ -5,6 +5,16 @@ import { useMultisigData } from './useMultisigData';
 import { useMultisigAddress } from './useMultisigAddress';
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
+export type TransactionKind = 'vault' | 'config' | 'batch' | 'unknown';
+
+function getTransactionKind(data: Buffer): TransactionKind {
+  const matches = (disc: number[]) => disc.every((b, i) => data[i] === b);
+  if (matches([...multisig.accounts.vaultTransactionDiscriminator])) return 'vault';
+  if (matches([...multisig.accounts.configTransactionDiscriminator])) return 'config';
+  if (matches([...multisig.accounts.batchDiscriminator])) return 'batch';
+  return 'unknown';
+}
+
 // load multisig
 export const useMultisig = () => {
   const { connection } = useMultisigData();
@@ -86,8 +96,14 @@ async function fetchTransactionData(
   ]);
 
   const transactionExists = transactionAccountInfo !== null;
+  const kind: TransactionKind = transactionAccountInfo
+    ? getTransactionKind(transactionAccountInfo.data)
+    : 'unknown';
+  const proposalStatusData = proposal?.status;
+  const approvedAt =
+    proposalStatusData?.__kind === 'Approved' ? Number(proposalStatusData.timestamp) : undefined;
 
-  return { transactionPda, proposal, index, transactionExists };
+  return { transactionPda, proposal, index, transactionExists, kind, approvedAt };
 }
 
 export const useTransactions = (startIndex: number, endIndex: number) => {

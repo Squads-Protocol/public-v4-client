@@ -10,6 +10,8 @@ import { TableBody, TableCell, TableRow } from './ui/table';
 import { useExplorerUrl, useRpcUrl } from '@/hooks/useSettings';
 import { Link } from 'react-router-dom';
 import { useMultisig } from '@/hooks/useServices';
+import type { TransactionKind } from '@/hooks/useServices';
+import { isProposalEOL } from '@/hooks/useProposalActions';
 import { cn } from '@/lib/utils';
 import TransactionInstructionDetails from './TransactionInstructionDetails';
 
@@ -22,6 +24,8 @@ interface ActionButtonsProps {
   approvedMembers: PublicKey[];
   rejectedMembers: PublicKey[];
   isAccountClosed: boolean;
+  approvedAt: number | undefined;
+  kind: TransactionKind;
 }
 
 type TransactionRow = {
@@ -29,6 +33,8 @@ type TransactionRow = {
   proposal: multisig.generated.Proposal | null;
   index: bigint;
   transactionExists: boolean;
+  kind: TransactionKind;
+  approvedAt: number | undefined;
 };
 
 const EOL_STATUSES = new Set(['Executed', 'Cancelled', 'Rejected']);
@@ -135,6 +141,8 @@ function TransactionRowItem({
             approvedMembers={transaction.proposal?.approved ?? []}
             rejectedMembers={transaction.proposal?.rejected ?? []}
             isAccountClosed={!transaction.transactionExists}
+            approvedAt={transaction.approvedAt}
+            kind={transaction.kind}
           />
         </TableCell>
       </TableRow>
@@ -161,7 +169,10 @@ function ActionButtons({
   approvedMembers,
   rejectedMembers,
   isAccountClosed,
+  approvedAt,
+  kind,
 }: ActionButtonsProps) {
+  if (isProposalEOL(proposalStatus, isStale, isAccountClosed)) return null;
   const isApproved = proposalStatus === 'Approved';
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
@@ -194,6 +205,8 @@ function ActionButtons({
         programId={programId}
         isStale={isStale}
         isAccountClosed={isAccountClosed}
+        approvedAt={approvedAt}
+        kind={kind}
       />
       {isApproved && (
         <CancelButton
@@ -201,7 +214,6 @@ function ActionButtons({
           transactionIndex={transactionIndex}
           proposalStatus={proposalStatus}
           programId={programId}
-          isStale={isStale}
           isAccountClosed={isAccountClosed}
         />
       )}

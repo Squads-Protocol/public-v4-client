@@ -8,8 +8,8 @@ import { toast } from 'sonner';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
-import { useMultisig } from '@/hooks/useServices';
-import { isMember, formatTransactionError } from '@/lib/utils';
+import { formatTransactionError } from '@/lib/utils';
+import { useApproveButtonState } from '@/hooks/useProposalActions';
 
 type ApproveButtonProps = {
   multisigPda: string;
@@ -32,23 +32,7 @@ const ApproveButton = ({
 }: ApproveButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const { data: multisigConfig } = useMultisig();
-  const terminalStatuses = ['Rejected', 'Approved', 'Executing', 'Executed', 'Cancelled'];
-  const hasAlreadyApproved =
-    !!wallet.publicKey && approvedMembers.some((k) => k.equals(wallet.publicKey!));
-  const connectedMember = wallet.publicKey
-    ? isMember(wallet.publicKey, multisigConfig?.members ?? [])
-    : undefined;
-  const hasVotePermission = connectedMember
-    ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Vote)
-    : false;
-  const isDisabled =
-    !wallet.publicKey ||
-    isAccountClosed ||
-    isStale ||
-    terminalStatuses.includes(proposalStatus || 'None') ||
-    hasAlreadyApproved ||
-    !hasVotePermission;
+  const { isDisabled } = useApproveButtonState({ proposalStatus, isStale, isAccountClosed, approvedMembers });
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');
@@ -102,7 +86,7 @@ const ApproveButton = ({
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Transaction approved.', { id: 'transaction' });
+    toast.success('Approval submitted.', { id: 'transaction' });
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
   return (

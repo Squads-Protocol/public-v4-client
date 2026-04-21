@@ -11,7 +11,7 @@ const SettingsPage = () => {
       <Suspense fallback={<div>Loading...</div>}>
         <main>
           <h1 className="mb-4 text-3xl font-bold">Settings</h1>
-          <div className="flex-col justify-start space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>RPC Url</CardTitle>

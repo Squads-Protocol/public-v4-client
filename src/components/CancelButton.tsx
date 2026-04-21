@@ -8,15 +8,14 @@ import { toast } from 'sonner';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
-import { useMultisig } from '@/hooks/useServices';
-import { isMember, formatTransactionError } from '@/lib/utils';
+import { formatTransactionError } from '@/lib/utils';
+import { useCancelButtonState } from '@/hooks/useProposalActions';
 
 type CancelButtonProps = {
   multisigPda: string;
   transactionIndex: number;
   proposalStatus: string;
   programId: string;
-  isStale: boolean;
   isAccountClosed: boolean;
 };
 
@@ -25,24 +24,11 @@ const CancelButton = ({
   transactionIndex,
   proposalStatus,
   programId,
-  isStale,
   isAccountClosed,
 }: CancelButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const { data: multisigConfig } = useMultisig();
-  const connectedMember = wallet.publicKey
-    ? isMember(wallet.publicKey, multisigConfig?.members ?? [])
-    : undefined;
-  const hasVotePermission = connectedMember
-    ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Vote)
-    : false;
-  const isDisabled =
-    !wallet.publicKey ||
-    isAccountClosed ||
-    isStale ||
-    proposalStatus !== 'Approved' ||
-    !hasVotePermission;
+  const { isDisabled } = useCancelButtonState({ proposalStatus, isAccountClosed });
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');
@@ -74,7 +60,7 @@ const CancelButton = ({
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success(`Proposal cancelled. (${signature})`, { id: 'transaction' });
+    toast.success(`Cancel submitted. (${signature})`, { id: 'transaction' });
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
 

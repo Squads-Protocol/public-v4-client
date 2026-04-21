@@ -10,9 +10,15 @@ export default function Overview() {
     <main>
       <div>
         <h1 className="text-3xl font-bold mb-4">Overview</h1>
-        {multisigAddress && <VaultDisplayer />}
-        {multisigAddress && <ChangeMultisig />}
-        {multisigAddress && <TokenList multisigPda={multisigAddress} />}
+        {multisigAddress && (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="flex-1"><VaultDisplayer /></div>
+              <div className="flex-1"><ChangeMultisig /></div>
+            </div>
+            <TokenList multisigPda={multisigAddress} />
+          </div>
+        )}
       </div>
     </main>
   );
