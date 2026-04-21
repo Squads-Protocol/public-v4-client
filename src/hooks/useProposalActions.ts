@@ -96,9 +96,11 @@ export function useExecuteButtonState({
     : false;
 
   const timeLock = multisigConfig?.timeLock ?? 0;
-  const timelockElapsed =
-    timeLock === 0 ||
-    (approvedAt !== undefined && Math.floor(Date.now() / 1000) >= approvedAt + timeLock);
+  const secondsUntilExecutable =
+    timeLock > 0 && approvedAt !== undefined
+      ? Math.max(0, approvedAt + timeLock - Math.floor(Date.now() / 1000))
+      : 0;
+  const timelockElapsed = timeLock === 0 || secondsUntilExecutable === 0;
 
   // Config transactions cannot execute when stale; vault and batch can
   const staleBlocked = isStale && kind === 'config';
@@ -111,6 +113,7 @@ export function useExecuteButtonState({
       proposalStatus !== 'Approved' ||
       !timelockElapsed ||
       !hasExecutePermission,
+    timelockSecondsRemaining: !timelockElapsed ? secondsUntilExecutable : null,
   };
 }
 

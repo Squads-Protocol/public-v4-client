@@ -104,8 +104,8 @@ function TransactionRowItem({
 
   return (
     <>
-      <TableRow>
-        <TableCell className="w-8 pr-0">
+      <TableRow className="block border-b md:table-row">
+        <TableCell className="hidden md:table-cell w-8 pr-0">
           {isExpandable && (
             <div className="relative group w-fit">
               <button
@@ -121,17 +121,31 @@ function TransactionRowItem({
             </div>
           )}
         </TableCell>
-        <TableCell>{Number(transaction.index)}</TableCell>
-        <TableCell className="text-blue-500">
+        <TableCell className="block md:table-cell">
+          <div className="flex items-center gap-2">
+            {isExpandable && (
+              <button
+                onClick={() => setIsExpanded((v) => !v)}
+                className="flex items-center justify-center rounded p-1 hover:bg-muted transition-colors md:hidden"
+                aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+              >
+                <Eye className={cn('h-4 w-4 transition-colors', isExpanded ? 'text-foreground' : 'text-muted-foreground')} />
+              </button>
+            )}
+            <span>{Number(transaction.index)}</span>
+          </div>
+        </TableCell>
+        <TableCell className="block md:table-cell truncate text-blue-500">
           <Link
             target="_blank"
             to={createSolanaExplorerUrl(transaction.transactionPda, rpcUrl!)}
+            className="truncate"
           >
             {transaction.transactionPda}
           </Link>
         </TableCell>
-        <TableCell>{status}</TableCell>
-        <TableCell>
+        <TableCell className="block md:table-cell">{status}</TableCell>
+        <TableCell className="block md:table-cell">
           <ActionButtons
             multisigPda={multisigPda}
             transactionIndex={Number(transaction.index)}
@@ -147,12 +161,12 @@ function TransactionRowItem({
         </TableCell>
       </TableRow>
       {isExpanded && (
-        <TableRow>
-          <TableCell colSpan={5} className="p-0">
+        <TableRow className="block md:table-row">
+          <TableCell colSpan={5} className="block md:table-cell p-0">
             <TransactionInstructionDetails
-            transactionPda={transaction.transactionPda}
-            proposal={transaction.proposal}
-          />
+              transactionPda={transaction.transactionPda}
+              proposal={transaction.proposal}
+            />
           </TableCell>
         </TableRow>
       )}

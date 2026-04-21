@@ -63,7 +63,7 @@ export default function TransactionsPage() {
                 Page: {page} of {totalPages}
               </TableCaption>
 
-              <TableHeader>
+              <TableHeader className="hidden md:table-header-group">
                 <TableRow>
                   <TableHead className="w-8" />
                   <TableHead>Index</TableHead>

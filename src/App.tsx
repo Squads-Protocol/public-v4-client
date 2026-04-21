@@ -28,7 +28,7 @@ const App = () => {
             <Suspense>
               <TabNav />
             </Suspense>
-            <div className="mt-1 space-y-2 p-3 pb-24 pt-4 md:ml-56 md:space-y-4 md:p-8 md:pt-6">
+            <div className="mt-1 flex-1 space-y-2 p-3 pb-24 pt-4 md:ml-56 md:space-y-4 md:p-8 md:pt-6 min-w-0">
               <ErrorBoundary>
                 <Suspense fallback={<p>Loading...</p>}>
                   <Routes>

@@ -9,7 +9,7 @@ const SettingsPage = () => {
   return (
     <ErrorBoundary>
       <Suspense fallback={<div>Loading...</div>}>
-        <main>
+        <div>
           <h1 className="mb-4 text-3xl font-bold">Settings</h1>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Card>
@@ -40,7 +40,7 @@ const SettingsPage = () => {
               </CardContent>
             </Card>
           </div>
-        </main>
+        </div>
       </Suspense>
     </ErrorBoundary>
   );
