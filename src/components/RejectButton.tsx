@@ -2,15 +2,15 @@
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { Button } from './ui/button';
 import * as multisig from '@sqds/multisig';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { toast } from 'sonner';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
-import { useMultisig } from '@/hooks/useServices';
-import { isMember, formatTransactionError } from '@/lib/utils';
+import { formatTransactionError } from '@/lib/utils';
+import { useRejectButtonState } from '@/hooks/useProposalActions';
 
 type RejectButtonProps = {
   multisigPda: string;
@@ -33,28 +33,11 @@ const RejectButton = ({
 }: RejectButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
-
+  const { isDisabled } = useRejectButtonState({ proposalStatus, isStale, isAccountClosed, rejectedMembers });
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
-  const { data: multisigConfig } = useMultisig();
-
-  const rejectableStatuses = ['None', 'Active', 'Draft'];
-  const hasAlreadyRejected =
-    !!wallet.publicKey && rejectedMembers.some((k) => k.equals(wallet.publicKey!));
-  const connectedMember = wallet.publicKey
-    ? isMember(wallet.publicKey, multisigConfig?.members ?? [])
-    : undefined;
-  const hasVotePermission = connectedMember
-    ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Vote)
-    : false;
-  const isDisabled =
-    !wallet.publicKey ||
-    isAccountClosed ||
-    isStale ||
-    !rejectableStatuses.includes(proposalStatus) ||
-    hasAlreadyRejected ||
-    !hasVotePermission;
   const signatureRef = useRef<string>('');
+  const [isPending, setIsPending] = useState(false);
 
   const rejectTransaction = async () => {
     if (!wallet.publicKey) {
@@ -108,13 +91,14 @@ const RejectButton = ({
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Transaction rejected.', { id: 'transaction' });
+    toast.success('Rejection submitted.', { id: 'transaction' });
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
   return (
     <Button
-      disabled={isDisabled}
+      disabled={isDisabled || isPending}
       onClick={async () => {
+        setIsPending(true);
         try {
           await rejectTransaction();
         } catch (e) {
@@ -122,6 +106,8 @@ const RejectButton = ({
             `Failed to reject: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
             { id: 'transaction' }
           );
+        } finally {
+          setIsPending(false);
         }
       }}
       size="sm"

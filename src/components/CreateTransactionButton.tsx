@@ -19,6 +19,8 @@ import { simulateEncodedTransaction } from '@/lib/transaction/simulateEncodedTra
 import { importTransaction } from '@/lib/transaction/importTransaction';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useAccess } from '@/hooks/useAccess';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import invariant from 'invariant';
 import { VaultSelector } from './VaultSelector';
 
@@ -30,6 +32,8 @@ const CreateTransaction = () => {
   const [open, setOpen] = useState(false);
 
   const { connection, multisigAddress, vaultIndex, programId } = useMultisigData();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const getSampleMessage = async () => {
     invariant(programId, 'Program ID not found');
@@ -110,7 +114,7 @@ const CreateTransaction = () => {
             <Button
               onClick={async () => {
                 try {
-                  await importTransaction(
+                  const signature = await importTransaction(
                     tx,
                     connection,
                     multisigAddress,
@@ -119,7 +123,9 @@ const CreateTransaction = () => {
                     wallet
                   );
                   setOpen(false);
-                  toast.success('Transaction proposed.', { id: 'transaction' });
+                  toast.success(`Transaction proposed. (${signature})`, { id: 'transaction' });
+                  await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+                  navigate('/transactions');
                 } catch (e) {
                   toast.error(`Failed to propose: ${formatTransactionError(e)}`, { id: 'transaction' });
                 }

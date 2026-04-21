@@ -16,11 +16,23 @@ import { DialogTrigger } from './ui/dialog';
 import { DialogContent, DialogTitle } from './ui/dialog';
 import { useRef, useState } from 'react';
 import { Input } from './ui/input';
-import { range, formatTransactionError, isMember } from '@/lib/utils';
+import { Clock } from 'lucide-react';
+import { range, formatTransactionError } from '@/lib/utils';
 import { useMultisigData } from '@/hooks/useMultisigData';
-import { useMultisig } from '@/hooks/useServices';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
+import { useExecuteButtonState } from '@/hooks/useProposalActions';
+import type { TransactionKind } from '@/hooks/useServices';
+
+function formatTimeRemaining(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  if (days >= 1) return `${days}day${days !== 1 ? 's' : ''}`;
+  const hours = Math.floor(seconds / 3600);
+  if (hours >= 1) return `${hours}hr${hours !== 1 ? 's' : ''}`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes >= 1) return `${minutes}min`;
+  return `${Math.floor(seconds)}sec`;
+}
 
 type WithALT = {
   instruction: TransactionInstruction;
@@ -34,6 +46,8 @@ type ExecuteButtonProps = {
   programId: string;
   isStale: boolean;
   isAccountClosed: boolean;
+  approvedAt: number | undefined;
+  kind: TransactionKind;
 };
 
 const ExecuteButton = ({
@@ -43,24 +57,19 @@ const ExecuteButton = ({
   programId,
   isStale,
   isAccountClosed,
+  approvedAt,
+  kind,
 }: ExecuteButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeDialog = () => setIsOpen(false);
+  const [isPending, setIsPending] = useState(false);
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const [priorityFeeLamports, setPriorityFeeLamports] = useState<number>(5000);
   const [computeUnitBudget, setComputeUnitBudget] = useState<number>(200_000);
 
-  const { data: multisigConfig } = useMultisig();
-  const connectedMember = wallet.publicKey
-    ? isMember(wallet.publicKey, multisigConfig?.members ?? [])
-    : undefined;
-  const hasExecutePermission = connectedMember
-    ? multisig.types.Permissions.has(connectedMember.permissions, multisig.types.Permission.Execute)
-    : false;
-
-  const isTransactionReady = !isAccountClosed && proposalStatus === 'Approved' && !isStale;
-  const isDisabled = !wallet.publicKey || !isTransactionReady || !hasExecutePermission;
+  const { isDisabled, timelockSecondsRemaining } = useExecuteButtonState({ proposalStatus, isStale, isAccountClosed, approvedAt, kind });
+  const timelockBlocked = timelockSecondsRemaining !== null;
 
   const { connection } = useMultisigData();
   const signaturesRef = useRef<string[]>([]);
@@ -76,32 +85,19 @@ const ExecuteButton = ({
     signaturesRef.current = [];
     let bigIntTransactionIndex = BigInt(transactionIndex);
 
-    if (!isTransactionReady) {
-      throw 'Proposal has not reached threshold';
-    }
-
     // Stage 1: waiting for wallet
     toast.loading('Waiting for wallet approval...', { id: 'execute', duration: Infinity });
+
+    const resolvedProgramId = programId ? new PublicKey(programId) : multisig.PROGRAM_ID;
 
     const [transactionPda] = multisig.getTransactionPda({
       multisigPda: new PublicKey(multisigPda),
       index: bigIntTransactionIndex,
-      programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+      programId: resolvedProgramId,
     });
 
-    let txData;
-    let txType;
-    try {
-      await multisig.accounts.VaultTransaction.fromAccountAddress(connection, transactionPda);
-      txType = 'vault';
-    } catch (error) {
-      try {
-        await multisig.accounts.ConfigTransaction.fromAccountAddress(connection, transactionPda);
-        txType = 'config';
-      } catch (e) {
-        txData = await multisig.accounts.Batch.fromAccountAddress(connection, transactionPda);
-        txType = 'batch';
-      }
+    if (kind === 'unknown') {
+      throw 'Cannot execute: transaction type could not be determined from account discriminator';
     }
 
     let transactions: VersionedTransaction[] = [];
@@ -115,13 +111,13 @@ const ExecuteButton = ({
 
     let blockhash = (await connection.getLatestBlockhash()).blockhash;
 
-    if (txType == 'vault') {
+    if (kind === 'vault') {
       const resp = await multisig.instructions.vaultTransactionExecute({
         multisigPda: new PublicKey(multisigPda),
         connection,
         member,
         transactionIndex: bigIntTransactionIndex,
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+        programId: resolvedProgramId,
       });
       transactions.push(
         new VersionedTransaction(
@@ -132,13 +128,13 @@ const ExecuteButton = ({
           }).compileToV0Message(resp.lookupTableAccounts)
         )
       );
-    } else if (txType == 'config') {
+    } else if (kind === 'config') {
       const executeIx = multisig.instructions.configTransactionExecute({
         multisigPda: new PublicKey(multisigPda),
         member,
         rentPayer: member,
         transactionIndex: bigIntTransactionIndex,
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+        programId: resolvedProgramId,
       });
       transactions.push(
         new VersionedTransaction(
@@ -149,14 +145,13 @@ const ExecuteButton = ({
           }).compileToV0Message()
         )
       );
-    } else if (txType == 'batch' && txData) {
+    } else if (kind === 'batch') {
+      const txData = await multisig.accounts.Batch.fromAccountAddress(connection, transactionPda);
       const executedBatchIndex = txData.executedTransactionIndex;
       const batchSize = txData.size;
 
       if (executedBatchIndex === undefined || batchSize === undefined) {
-        throw new Error(
-          "executedBatchIndex or batchSize is undefined and can't execute the transaction"
-        );
+        throw new Error("executedBatchIndex or batchSize is undefined and can't execute the transaction");
       }
 
       transactions.push(
@@ -169,7 +164,7 @@ const ExecuteButton = ({
                 batchIndex: bigIntTransactionIndex,
                 transactionIndex: batchIndex,
                 multisigPda: new PublicKey(multisigPda),
-                programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
+                programId: resolvedProgramId,
               });
 
             const message = new TransactionMessage({
@@ -222,13 +217,21 @@ const ExecuteButton = ({
   };
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger
-        disabled={isDisabled}
-        className={`h-9 px-3 text-sm w-full sm:w-auto ${isDisabled ? `bg-primary/50` : `bg-primary hover:bg-primary/90`} rounded-md text-primary-foreground`}
-        onClick={() => setIsOpen(true)}
-      >
-        Execute
-      </DialogTrigger>
+      <div className="relative group w-full sm:w-auto">
+        <DialogTrigger
+          disabled={isDisabled}
+          className={`h-9 px-3 text-sm w-full inline-flex items-center justify-center gap-1.5 ${isDisabled ? `bg-green-600/50` : `bg-green-600 hover:bg-green-700`} rounded-md text-white`}
+          onClick={() => setIsOpen(true)}
+        >
+          {timelockBlocked && <Clock className="h-3.5 w-3.5" />}
+          Execute
+        </DialogTrigger>
+        {timelockBlocked && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs bg-popover text-popover-foreground rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+            {formatTimeRemaining(timelockSecondsRemaining!)} remaining
+          </div>
+        )}
+      </div>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Execute Transaction</DialogTitle>
@@ -250,8 +253,9 @@ const ExecuteButton = ({
           value={computeUnitBudget}
         />
         <Button
-          disabled={isDisabled}
+          disabled={isDisabled || isPending}
           onClick={async () => {
+            setIsPending(true);
             try {
               await executeTransaction();
             } catch (e) {
@@ -259,9 +263,11 @@ const ExecuteButton = ({
                 `Failed to execute: ${formatTransactionError(e)}${signaturesRef.current.length ? ` (${signaturesRef.current.join(', ')})` : ''}`,
                 { id: 'execute' }
               );
+            } finally {
+              setIsPending(false);
             }
           }}
-          className="mr-2"
+          className="mr-2 bg-green-600 hover:bg-green-700 text-white"
         >
           Execute
         </Button>

@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { isPublickey } from '~/lib/isPublickey';
 import { useMultisigData } from '~/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useAccess } from '../hooks/useAccess';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { buildProposalIx } from '~/lib/multisigUtils';
@@ -53,6 +54,7 @@ const SendTokens = ({
   const { connection } = useMultisigData();
 
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const signatureRef = useRef<string>('');
   const parsedAmount = parseFloat(amount);
   const isAmountValid = !isNaN(parsedAmount) && parsedAmount > 0;
@@ -160,7 +162,7 @@ const SendTokens = ({
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Transfer proposed.', { id: 'transaction' });
+    toast.success(`Transfer proposed. (${signature})`, { id: 'transaction' });
     setAmount('');
     setRecipient('');
     await Promise.all([
@@ -168,6 +170,7 @@ const SendTokens = ({
       queryClient.invalidateQueries({ queryKey: ['multisig'] }),
     ]);
     closeDialog();
+    navigate('/transactions');
   };
 
   return (

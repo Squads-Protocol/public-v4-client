@@ -36,7 +36,17 @@ export function TokenList({ multisigPda }: TokenListProps) {
             {tokens && tokens.length > 0 ? <hr className="mt-2" /> : null}
           </div>
           {tokens &&
-            tokens.map((token) => (
+            [...tokens]
+              .sort((a, b) => {
+                const amountDiff =
+                  (b.account.data.parsed.info.tokenAmount.uiAmount ?? 0) -
+                  (a.account.data.parsed.info.tokenAmount.uiAmount ?? 0);
+                if (amountDiff !== 0) return amountDiff;
+                return a.account.data.parsed.info.mint.localeCompare(
+                  b.account.data.parsed.info.mint
+                );
+              })
+              .map((token) => (
               <div key={token.account.data.parsed.info.mint}>
                 <div className="flex items-center">
                   <div className="ml-4 space-y-1">

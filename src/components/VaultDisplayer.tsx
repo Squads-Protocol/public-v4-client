@@ -9,7 +9,7 @@ export function VaultDisplayer({}: VaultDisplayerProps) {
   const { multisigVault: vaultAddress } = useMultisigData();
 
   return (
-    <Card className="w-fit my-3">
+    <Card className="h-full">
       <CardHeader>
         <CardTitle>Squads Vault</CardTitle>
       </CardHeader>

@@ -9,69 +9,45 @@ import { useMultisigData } from '@/hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { formatTransactionError } from '@/lib/utils';
-import { useApproveButtonState } from '@/hooks/useProposalActions';
+import { useCancelButtonState } from '@/hooks/useProposalActions';
 
-type ApproveButtonProps = {
+type CancelButtonProps = {
   multisigPda: string;
   transactionIndex: number;
   proposalStatus: string;
   programId: string;
-  isStale: boolean;
-  approvedMembers: PublicKey[];
   isAccountClosed: boolean;
+  cancelledMembers: PublicKey[];
 };
 
-const ApproveButton = ({
+const CancelButton = ({
   multisigPda,
   transactionIndex,
   proposalStatus,
   programId,
-  isStale,
-  approvedMembers,
   isAccountClosed,
-}: ApproveButtonProps) => {
+  cancelledMembers,
+}: CancelButtonProps) => {
   const wallet = useWallet();
   const walletModal = useWalletModal();
-  const { isDisabled } = useApproveButtonState({ proposalStatus, isStale, isAccountClosed, approvedMembers });
+  const { isDisabled } = useCancelButtonState({ proposalStatus, isAccountClosed, cancelledMembers });
   const { connection } = useMultisigData();
   const queryClient = useQueryClient();
   const signatureRef = useRef<string>('');
   const [isPending, setIsPending] = useState(false);
 
-  const approveProposal = async () => {
+  const cancelProposal = async () => {
     if (!wallet.publicKey) {
       walletModal.setVisible(true);
       throw 'Wallet not connected';
     }
-    let bigIntTransactionIndex = BigInt(transactionIndex);
-    const transaction = new Transaction();
-    if (proposalStatus === 'None') {
-      const createProposalInstruction = multisig.instructions.proposalCreate({
-        multisigPda: new PublicKey(multisigPda),
-        creator: wallet.publicKey,
-        isDraft: false,
-        transactionIndex: bigIntTransactionIndex,
-        rentPayer: wallet.publicKey,
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-      });
-      transaction.add(createProposalInstruction);
-    }
-    if (proposalStatus == 'Draft') {
-      const activateProposalInstruction = multisig.instructions.proposalActivate({
-        multisigPda: new PublicKey(multisigPda),
-        member: wallet.publicKey,
-        transactionIndex: bigIntTransactionIndex,
-        programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
-      });
-      transaction.add(activateProposalInstruction);
-    }
-    const approveProposalInstruction = multisig.instructions.proposalApprove({
+    const cancelIx = multisig.instructions.proposalCancelV2({
       multisigPda: new PublicKey(multisigPda),
+      transactionIndex: BigInt(transactionIndex),
       member: wallet.publicKey,
-      transactionIndex: bigIntTransactionIndex,
       programId: programId ? new PublicKey(programId) : multisig.PROGRAM_ID,
     });
-    transaction.add(approveProposalInstruction);
+    const transaction = new Transaction().add(cancelIx);
     toast.loading('Waiting for wallet approval...', { id: 'transaction', duration: Infinity });
 
     const signature = await wallet.sendTransaction(transaction, connection, {
@@ -87,19 +63,21 @@ const ApproveButton = ({
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Approval submitted.', { id: 'transaction' });
+    toast.success(`Cancel submitted. (${signature})`, { id: 'transaction' });
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
   };
+
   return (
     <Button
+      variant="destructive"
       disabled={isDisabled || isPending}
       onClick={async () => {
         setIsPending(true);
         try {
-          await approveProposal();
+          await cancelProposal();
         } catch (e) {
           toast.error(
-            `Failed to approve: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
+            `Failed to cancel: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
             { id: 'transaction' }
           );
         } finally {
@@ -109,9 +87,9 @@ const ApproveButton = ({
       size="sm"
       className="w-full sm:w-auto"
     >
-      Approve
+      Cancel
     </Button>
   );
 };
 
-export default ApproveButton;
+export default CancelButton;

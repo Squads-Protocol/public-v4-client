@@ -13,9 +13,7 @@ export default function RenderMultisigRoute() {
   return (
     <>
       {multisig ? (
-        <div>
-          <Overview />
-        </div>
+        <Overview />
       ) : (
         <>
           <MultisigInput onUpdate={() => null} />

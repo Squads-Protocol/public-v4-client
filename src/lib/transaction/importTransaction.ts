@@ -86,6 +86,7 @@ export const importTransaction = async (
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
+    return signature;
   } catch (error) {
     throw error;
   }

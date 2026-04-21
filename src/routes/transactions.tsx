@@ -1,8 +1,9 @@
 import { Loader2 } from 'lucide-react';
-import { Table, TableCaption, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Pagination,
   PaginationContent,
+  PaginationItem,
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
@@ -58,12 +59,7 @@ export default function TransactionsPage() {
 
           <Suspense>
             <Table>
-              <TableCaption>A list of your recent transactions.</TableCaption>
-              <TableCaption>
-                Page: {page} of {totalPages}
-              </TableCaption>
-
-              <TableHeader>
+              <TableHeader className="hidden md:table-header-group">
                 <TableRow>
                   <TableHead className="w-8" />
                   <TableHead>Index</TableHead>
@@ -82,22 +78,29 @@ export default function TransactionsPage() {
             </Table>
           </Suspense>
 
-          <Pagination>
-            <PaginationContent>
-              {page > 1 && (
-                <PaginationPrevious
-                  onClick={() => navigate(`/transactions?page=${page - 1}`)}
-                  to={`/transactions?page=${page - 1}`}
-                />
-              )}
-              {page < totalPages && (
-                <PaginationNext
-                  to={`/transactions?page=${page + 1}`}
-                  onClick={() => navigate(`/transactions?page=${page + 1}`)}
-                />
-              )}
-            </PaginationContent>
-          </Pagination>
+          {totalPages > 0 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                {page > 1 && (
+                  <PaginationPrevious
+                    onClick={() => navigate(`/transactions?page=${page - 1}`)}
+                    to={`/transactions?page=${page - 1}`}
+                  />
+                )}
+                <PaginationItem>
+                  <span className="px-3 text-sm text-muted-foreground">
+                    Page {page} of {totalPages}
+                  </span>
+                </PaginationItem>
+                {page < totalPages && (
+                  <PaginationNext
+                    to={`/transactions?page=${page + 1}`}
+                    onClick={() => navigate(`/transactions?page=${page + 1}`)}
+                  />
+                )}
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </Suspense>
     </ErrorBoundary>

@@ -12,6 +12,7 @@ import invariant from 'invariant';
 import { types as multisigTypes } from '@sqds/multisig';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useAccess } from '../hooks/useAccess';
 import { buildProposalIx } from '../lib/multisigUtils';
@@ -28,7 +29,9 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const signatureRef = useRef<string>('');
+  const [isPending, setIsPending] = useState(false);
 
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection, programId } = useMultisigData();
@@ -106,11 +109,12 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Threshold change proposed.', { id: 'transaction' });
+    toast.success(`Threshold change proposed. (${signature})`, { id: 'transaction' });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['multisig'] }),
     ]);
+    navigate('/transactions');
   };
   return (
     <div>
@@ -122,6 +126,7 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
       />
       <Button
         onClick={async () => {
+          setIsPending(true);
           try {
             await changeThreshold();
           } catch (e) {
@@ -129,12 +134,15 @@ const ChangeThresholdInput = ({ multisigPda, transactionIndex }: ChangeThreshold
               `Failed to propose: ${formatTransactionError(e)}${signatureRef.current ? ` (${signatureRef.current})` : ''}`,
               { id: 'transaction' }
             );
+          } finally {
+            setIsPending(false);
           }
         }}
         disabled={
           !hasAccess ||
           !threshold ||
-          (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10))
+          (!!multisigConfig && multisigConfig.threshold == parseInt(threshold, 10)) ||
+          isPending
         }
       >
         Change Threshold

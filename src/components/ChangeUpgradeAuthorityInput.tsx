@@ -19,6 +19,7 @@ import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { buildProposalIx } from '../lib/multisigUtils';
 
 type ChangeUpgradeAuthorityInputProps = {
@@ -34,6 +35,7 @@ const ChangeUpgradeAuthorityInput = ({
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const signatureRef = useRef<string>('');
   const bigIntTransactionIndex = BigInt(transactionIndex);
   const { connection, multisigAddress, vaultIndex, programId, multisigVault } = useMultisigData();
@@ -131,11 +133,12 @@ const ChangeUpgradeAuthorityInput = ({
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Upgrade authority change proposed.', { id: 'transaction' });
+    toast.success(`Upgrade authority change proposed. (${signature})`, { id: 'transaction' });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['multisig'] }),
     ]);
+    navigate('/transactions');
   };
   return (
     <div>

@@ -19,6 +19,7 @@ import { isPublickey } from '@/lib/isPublickey';
 import { SimplifiedProgramInfo } from '../hooks/useProgram';
 import { useMultisigData } from '../hooks/useMultisigData';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { waitForConfirmation } from '../lib/transactionConfirmation';
 import { buildProposalIx } from '../lib/multisigUtils';
 
@@ -32,6 +33,7 @@ const CreateProgramUpgradeInput = ({
   transactionIndex,
 }: CreateProgramUpgradeInputProps) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const signatureRef = useRef<string>('');
   const wallet = useWallet();
   const walletModal = useWalletModal();
@@ -154,8 +156,9 @@ const CreateProgramUpgradeInput = ({
     if (!confirmed) {
       throw `Transaction failed or timed out. Check ${signature}`;
     }
-    toast.success('Program upgrade proposed.', { id: 'transaction' });
+    toast.success(`Program upgrade proposed. (${signature})`, { id: 'transaction' });
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    navigate('/transactions');
   };
   return (
     <div>

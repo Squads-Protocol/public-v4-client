@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react';
 import { Wallet } from './components/Wallet';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { AlertTriangle, CheckSquare } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
 import TabNav from './components/TabNav';
@@ -17,9 +16,9 @@ import { Routes, Route, HashRouter } from 'react-router-dom';
 import './styles/global.css'; // Load Tailwind styles
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-const App = () => {
-  const queryClient = new QueryClient();
+const queryClient = new QueryClient();
 
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <Wallet>
@@ -28,7 +27,7 @@ const App = () => {
             <Suspense>
               <TabNav />
             </Suspense>
-            <div className="mt-1 space-y-2 p-3 pb-24 pt-4 md:ml-auto md:w-9/12 md:space-y-4 md:p-8 md:pt-6">
+            <div className="mt-1 flex-1 space-y-2 p-3 pb-24 pt-4 md:ml-56 md:space-y-4 md:p-8 md:pt-6 min-w-0">
               <ErrorBoundary>
                 <Suspense fallback={<p>Loading...</p>}>
                   <Routes>

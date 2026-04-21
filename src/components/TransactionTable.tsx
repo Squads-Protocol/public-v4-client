@@ -3,12 +3,15 @@ import { PublicKey } from '@solana/web3.js';
 import { useState } from 'react';
 import { Eye } from 'lucide-react';
 import ApproveButton from './ApproveButton';
+import CancelButton from './CancelButton';
 import ExecuteButton from './ExecuteButton';
 import RejectButton from './RejectButton';
 import { TableBody, TableCell, TableRow } from './ui/table';
 import { useExplorerUrl, useRpcUrl } from '@/hooks/useSettings';
 import { Link } from 'react-router-dom';
 import { useMultisig } from '@/hooks/useServices';
+import type { TransactionKind } from '@/hooks/useServices';
+import { isProposalEOL } from '@/hooks/useProposalActions';
 import { cn } from '@/lib/utils';
 import TransactionInstructionDetails from './TransactionInstructionDetails';
 
@@ -20,7 +23,10 @@ interface ActionButtonsProps {
   isStale: boolean;
   approvedMembers: PublicKey[];
   rejectedMembers: PublicKey[];
+  cancelledMembers: PublicKey[];
   isAccountClosed: boolean;
+  approvedAt: number | undefined;
+  kind: TransactionKind;
 }
 
 type TransactionRow = {
@@ -28,6 +34,8 @@ type TransactionRow = {
   proposal: multisig.generated.Proposal | null;
   index: bigint;
   transactionExists: boolean;
+  kind: TransactionKind;
+  approvedAt: number | undefined;
 };
 
 const EOL_STATUSES = new Set(['Executed', 'Cancelled', 'Rejected']);
@@ -89,16 +97,18 @@ function TransactionRowItem({
   const statusKind = transaction.proposal?.status.__kind;
   const isExpandable = transaction.transactionExists;
 
+  // Vault and batch can execute even when stale+Approved; config cannot (program rejects it).
+  const executableWhenStale = statusKind === 'Approved' && transaction.kind !== 'config';
   const status = !transaction.transactionExists
     ? 'Closed'
-    : stale
+    : stale && !executableWhenStale
       ? '(stale)'
       : statusKind || 'None';
 
   return (
     <>
-      <TableRow>
-        <TableCell className="w-8 pr-0">
+      <TableRow className="block border-b md:table-row">
+        <TableCell className="hidden md:table-cell w-8 pr-0">
           {isExpandable && (
             <div className="relative group w-fit">
               <button
@@ -114,17 +124,31 @@ function TransactionRowItem({
             </div>
           )}
         </TableCell>
-        <TableCell>{Number(transaction.index)}</TableCell>
-        <TableCell className="text-blue-500">
+        <TableCell className="block md:table-cell">
+          <div className="flex items-center gap-2">
+            {isExpandable && (
+              <button
+                onClick={() => setIsExpanded((v) => !v)}
+                className="flex items-center justify-center rounded p-1 hover:bg-muted transition-colors md:hidden"
+                aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+              >
+                <Eye className={cn('h-4 w-4 transition-colors', isExpanded ? 'text-foreground' : 'text-muted-foreground')} />
+              </button>
+            )}
+            <span>{Number(transaction.index)}</span>
+          </div>
+        </TableCell>
+        <TableCell className="block md:table-cell truncate text-blue-500">
           <Link
             target="_blank"
             to={createSolanaExplorerUrl(transaction.transactionPda, rpcUrl!)}
+            className="truncate"
           >
             {transaction.transactionPda}
           </Link>
         </TableCell>
-        <TableCell>{status}</TableCell>
-        <TableCell>
+        <TableCell className="block md:table-cell">{status}</TableCell>
+        <TableCell className="block md:table-cell">
           <ActionButtons
             multisigPda={multisigPda}
             transactionIndex={Number(transaction.index)}
@@ -133,17 +157,20 @@ function TransactionRowItem({
             isStale={stale}
             approvedMembers={transaction.proposal?.approved ?? []}
             rejectedMembers={transaction.proposal?.rejected ?? []}
+            cancelledMembers={transaction.proposal?.cancelled ?? []}
             isAccountClosed={!transaction.transactionExists}
+            approvedAt={transaction.approvedAt}
+            kind={transaction.kind}
           />
         </TableCell>
       </TableRow>
       {isExpanded && (
-        <TableRow>
-          <TableCell colSpan={5} className="p-0">
+        <TableRow className="block md:table-row">
+          <TableCell colSpan={5} className="block md:table-cell p-0">
             <TransactionInstructionDetails
-            transactionPda={transaction.transactionPda}
-            proposal={transaction.proposal}
-          />
+              transactionPda={transaction.transactionPda}
+              proposal={transaction.proposal}
+            />
           </TableCell>
         </TableRow>
       )}
@@ -159,28 +186,37 @@ function ActionButtons({
   isStale,
   approvedMembers,
   rejectedMembers,
+  cancelledMembers,
   isAccountClosed,
+  approvedAt,
+  kind,
 }: ActionButtonsProps) {
+  if (isProposalEOL(proposalStatus, isStale, isAccountClosed)) return null;
+  const isApproved = proposalStatus === 'Approved';
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
-      <ApproveButton
-        multisigPda={multisigPda}
-        transactionIndex={transactionIndex}
-        proposalStatus={proposalStatus}
-        programId={programId}
-        isStale={isStale}
-        approvedMembers={approvedMembers}
-        isAccountClosed={isAccountClosed}
-      />
-      <RejectButton
-        multisigPda={multisigPda}
-        transactionIndex={transactionIndex}
-        proposalStatus={proposalStatus}
-        programId={programId}
-        isStale={isStale}
-        rejectedMembers={rejectedMembers}
-        isAccountClosed={isAccountClosed}
-      />
+      {!isApproved && (
+        <>
+          <ApproveButton
+            multisigPda={multisigPda}
+            transactionIndex={transactionIndex}
+            proposalStatus={proposalStatus}
+            programId={programId}
+            isStale={isStale}
+            approvedMembers={approvedMembers}
+            isAccountClosed={isAccountClosed}
+          />
+          <RejectButton
+            multisigPda={multisigPda}
+            transactionIndex={transactionIndex}
+            proposalStatus={proposalStatus}
+            programId={programId}
+            isStale={isStale}
+            rejectedMembers={rejectedMembers}
+            isAccountClosed={isAccountClosed}
+          />
+        </>
+      )}
       <ExecuteButton
         multisigPda={multisigPda}
         transactionIndex={transactionIndex}
@@ -188,7 +224,19 @@ function ActionButtons({
         programId={programId}
         isStale={isStale}
         isAccountClosed={isAccountClosed}
+        approvedAt={approvedAt}
+        kind={kind}
       />
+      {isApproved && (
+        <CancelButton
+          multisigPda={multisigPda}
+          transactionIndex={transactionIndex}
+          proposalStatus={proposalStatus}
+          programId={programId}
+          isAccountClosed={isAccountClosed}
+          cancelledMembers={cancelledMembers}
+        />
+      )}
     </div>
   );
 }

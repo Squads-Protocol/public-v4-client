@@ -19,7 +19,7 @@ export default function TabNav() {
     <>
       <aside
         id="sidebar"
-        className="z-40 hidden h-auto md:fixed md:left-0 md:top-0 md:block md:h-screen md:w-3/12 lg:w-3/12"
+        className="z-40 hidden h-auto md:fixed md:left-0 md:top-0 md:block md:h-screen md:w-56"
         aria-label="Sidebar"
       >
         <div className="flex h-auto flex-col justify-between overflow-y-auto bg-[#111318] px-3 py-5 md:h-full md:border-r md:border-[#1e2028]">
