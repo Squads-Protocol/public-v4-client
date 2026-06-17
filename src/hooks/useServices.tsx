@@ -1,6 +1,7 @@
 import * as multisig from '@sqds/multisig';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Connection, PublicKey } from '@solana/web3.js';
+import { toast } from 'sonner';
 import { useMultisigData } from './useMultisigData';
 import { useMultisigAddress } from './useMultisigAddress';
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
@@ -26,8 +27,20 @@ export const useMultisig = () => {
       if (!multisigAddress) return null;
       try {
         const multisigPubkey = new PublicKey(multisigAddress);
-        return multisig.accounts.Multisig.fromAccountAddress(connection, multisigPubkey);
+        // NOTE: must `await` here so a deserialization rejection is caught below.
+        // Returning the un-awaited promise lets the rejection escape this try/catch
+        // and, because this is a useSuspenseQuery, it gets thrown to the ErrorBoundary.
+        return await multisig.accounts.Multisig.fromAccountAddress(connection, multisigPubkey);
       } catch (error) {
+        // Distinguish "account doesn't exist" (expected — show lookup) from
+        // "account found but failed to decode" (surface a message to the user).
+        const message = error instanceof Error ? error.message : String(error);
+        const notFound = message.includes('Unable to find');
+        if (!notFound) {
+          toast.error('Failed to load multisig', {
+            description: 'The multisig account could not be decoded. Verify the address and that your RPC/network are correct.',
+          });
+        }
         return null;
       }
     },
@@ -42,7 +55,7 @@ export const useBalance = () => {
     queryFn: async () => {
       if (!multisigVault) return null;
       try {
-        return connection.getBalance(multisigVault);
+        return await connection.getBalance(multisigVault);
       } catch (error) {
         return null;
       }
