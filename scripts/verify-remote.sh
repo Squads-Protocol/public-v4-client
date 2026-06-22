@@ -18,6 +18,31 @@ VERIFY_DIR="squads-public-verify"
 rm -rf "$VERIFY_DIR"
 mkdir -p "$VERIFY_DIR"
 
+validate_manifest_path() {
+  local file="$1"
+
+  # Allow public asset paths like "/assets/app.js" by making them relative.
+  while [[ "$file" == /* ]]; do
+    file="${file#/}"
+  done
+
+  while [[ "$file" == ./* ]]; do
+    file="${file#./}"
+  done
+
+  if [[ -z "$file" || "$file" == "." ]]; then
+    echo "❌ Error: Empty or invalid manifest path." >&2
+    exit 1
+  fi
+
+  if [[ "$file" == ".." || "$file" == "../"* || "$file" == *"/../"* || "$file" == *"/.." ]]; then
+    echo "❌ Error: Unsafe manifest path: $1" >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$file"
+}
+
 # Function to prompt user for installation
 install_package() {
     PACKAGE=$1
@@ -83,16 +108,18 @@ fi
 
 # Parse manifest to get file list
 echo "📜 Fetching files listed in manifest.json..."
-jq -r '.[]' "$VERIFY_DIR/manifest.json" | while read -r FILE; do
-    FILE_URL="$REMOTE_URL/$FILE"
-    FILE_PATH="$VERIFY_DIR/$FILE"
+jq -r '.[]' "$VERIFY_DIR/manifest.json" | while IFS= read -r FILE; do
+  SAFE_FILE="$(validate_manifest_path "$FILE")"
 
-    # Ensure target directory exists
-    mkdir -p "$(dirname "$FILE_PATH")"
+  FILE_URL="$REMOTE_URL/$SAFE_FILE"
+  FILE_PATH="$VERIFY_DIR/$SAFE_FILE"
 
-    # Download the file
-    echo "⬇️  Downloading $FILE..."
-    wget -q --no-clobber -O "$FILE_PATH" "$FILE_URL"
+  # Ensure target directory exists
+  mkdir -p "$(dirname "$FILE_PATH")"
+
+  # Download the file
+  echo "⬇️ Downloading $SAFE_FILE..."
+  wget -q --no-clobber -O "$FILE_PATH" "$FILE_URL"
 done
 
 # Compute hash for verification
