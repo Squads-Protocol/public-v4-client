@@ -10,7 +10,6 @@ import {
 import { decodeAndDeserialize } from './decodeAndDeserialize';
 import { WalletContextState } from '@solana/wallet-adapter-react';
 import { toast } from 'sonner';
-import { loadLookupTables } from './getAccountsForSimulation';
 import { waitForConfirmation } from '~/lib/transactionConfirmation';
 import { buildProposalIx } from '~/lib/multisigUtils';
 
@@ -26,19 +25,15 @@ export const importTransaction = async (
     throw 'Please connect your wallet.';
   }
   try {
-    const { message, version } = decodeAndDeserialize(tx);
+    const { message: transactionMessage, addressLookupTableAccounts } = await decodeAndDeserialize(
+      tx,
+      connection
+    );
 
     const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
       connection,
       new PublicKey(multisigPda)
     );
-
-    const transactionMessage = new TransactionMessage(message);
-
-    const addressLookupTableAccounts =
-      version === 0
-        ? await loadLookupTables(connection, transactionMessage.compileToV0Message())
-        : [];
 
     const transactionIndex = Number(multisigInfo.transactionIndex) + 1;
     const transactionIndexBN = BigInt(transactionIndex);
