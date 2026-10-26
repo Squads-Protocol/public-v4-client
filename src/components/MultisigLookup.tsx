@@ -17,6 +17,8 @@ import { identifyInstructionByDiscriminator } from '../lib/discriminators';
 import { useMultisigAddress } from '../hooks/useMultisigAddress';
 import { toast } from 'sonner';
 
+const MAX_CONSECUTIVE_SCAN_FAILURES = 5;
+
 interface MultisigLookupProps {
   onUpdate: () => void;
 }
@@ -49,6 +51,9 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
         setStatusMessages([`There was an issue retrieving the signatures, search again`]);
       }
 
+      let scannedCount = 0;
+      let consecutiveFailures = 0;
+      let lastFailure = '';
       for (const signature of signatures) {
         if (forceCancel) {
           setSearching(false);
@@ -59,45 +64,70 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
           `Scanning signature ${signature.signature} - in progress`,
         ]);
 
-        const tx: VersionedTransactionResponse | null = await connection.getTransaction(
-          signature.signature,
-          {
-            commitment: 'confirmed',
-            maxSupportedTransactionVersion: 0,
-          }
-        );
+        let scanResult = 'done';
+        try {
+          const tx: VersionedTransactionResponse | null = await connection.getTransaction(
+            signature.signature,
+            {
+              commitment: 'confirmed',
+              maxSupportedTransactionVersion: 1,
+            }
+          );
 
-        if (tx) {
-          const result = await processTransaction(tx, connection, programId);
-          if (result) {
-            if (result.decompiled) {
-              for (let i = 0; i < result.decompiled.instructions.length; i++) {
-                let identified = identifyInstructionByDiscriminator(
-                  result.decompiled.instructions[i],
-                  programId
-                );
-                if (identified) {
-                  let msKey =
-                    result.decompiled.instructions[i].keys[
-                      identified.multisigAccountIndex
-                    ].pubkey.toBase58();
-                  setFoundMultisigs((prevState) => {
-                    return prevState.add(msKey);
-                  });
+          if (tx) {
+            const result = await processTransaction(tx, connection, programId);
+            if (result) {
+              if (result.decompiled) {
+                for (let i = 0; i < result.decompiled.instructions.length; i++) {
+                  let identified = identifyInstructionByDiscriminator(
+                    result.decompiled.instructions[i],
+                    programId
+                  );
+                  if (identified) {
+                    let msKey =
+                      result.decompiled.instructions[i].keys[
+                        identified.multisigAccountIndex
+                      ].pubkey.toBase58();
+                    setFoundMultisigs((prevState) => {
+                      return prevState.add(msKey);
+                    });
+                  }
                 }
               }
             }
+            scannedCount++;
+          } else {
+            scanResult = 'skipped, transaction not found';
           }
+          consecutiveFailures = 0;
+        } catch (e) {
+          console.error(`Failed to scan signature ${signature.signature}`, e);
+          consecutiveFailures++;
+          lastFailure = e instanceof Error ? e.message : String(e);
+          scanResult = `skipped, ${lastFailure}`;
         }
 
         setStatusMessages((prev) =>
           prev.map((msg) =>
             msg.includes(signature.signature)
-              ? `Scanning signature ${signature.signature} - done`
+              ? `Scanning signature ${signature.signature} - ${scanResult}`
               : msg
           )
         );
+        if (consecutiveFailures >= MAX_CONSECUTIVE_SCAN_FAILURES) {
+          throw new Error(
+            `stopped after ${consecutiveFailures} signatures in a row failed to load (${lastFailure})`
+          );
+        }
         await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      if (signatures.length > 0 && scannedCount === 0) {
+        throw new Error(
+          lastFailure
+            ? `none of the signatures could be scanned (${lastFailure})`
+            : 'none of the signatures could be scanned'
+        );
       }
 
       setSearching(false);
@@ -127,7 +157,7 @@ const MultisigLookup: React.FC<MultisigLookupProps> = ({ onUpdate }) => {
             id: 'mksKeySearch',
             loading: 'Loading...',
             success: 'Search finished.',
-            error: (e) => `Failed to propose: ${formatTransactionError(e)}`,
+            error: (e) => `Search failed: ${formatTransactionError(e)}`,
           })
         }
         className="mt-4"
