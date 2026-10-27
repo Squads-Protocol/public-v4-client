@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run Release Please
-        uses: google-github-actions/release-please-action@v3
+        # PC4-5 Fix: Used securely pinned immutable SHA hash instead of mutable @v3 or @v4 tag
+        uses: googleapis/release-please-action@8b8fd2cc23b2e18957157a9d923d75aa0c6f6ad5 # v4
         with:
           release-type: node
           token: ${{ secrets.GITHUB_TOKEN }}
