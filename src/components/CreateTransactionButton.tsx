@@ -19,10 +19,13 @@ import { simulateEncodedTransaction } from '@/lib/transaction/simulateEncodedTra
 import { importTransaction } from '@/lib/transaction/importTransaction';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { useAccess } from '@/hooks/useAccess';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import invariant from 'invariant';
 import { VaultSelector } from './VaultSelector';
+import { decodeEncodedMessage } from '@/lib/transaction/decodeTransactionMessage';
+import { hasDangerWarning, loadDescribeContext } from '@/lib/transaction/describe';
+import { InstructionCard } from './InstructionCards';
 
 const CreateTransaction = () => {
   const wallet = useWallet();
@@ -30,10 +33,28 @@ const CreateTransaction = () => {
 
   const [tx, setTx] = useState('');
   const [open, setOpen] = useState(false);
+  const [dangerConfirmed, setDangerConfirmed] = useState(false);
 
   const { connection, multisigAddress, vaultIndex, programId } = useMultisigData();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const preview = useQuery({
+    queryKey: ['importPreview', tx, multisigAddress, programId.toBase58()],
+    queryFn: async () => {
+      const instructions = await decodeEncodedMessage(connection, tx);
+      const ctx = await loadDescribeContext(
+        connection,
+        new PublicKey(multisigAddress!),
+        programId,
+        instructions
+      );
+      return { instructions, ctx, hasDanger: hasDangerWarning(instructions, ctx) };
+    },
+    enabled: open && !!tx && !!multisigAddress,
+    retry: false,
+  });
+  const needsDangerConfirm = !!preview.data?.hasDanger && !dangerConfirmed;
 
   const getSampleMessage = async () => {
     invariant(programId, 'Program ID not found');
@@ -92,8 +113,42 @@ const CreateTransaction = () => {
           placeholder="Paste base58 encoded transaction..."
           type="text"
           defaultValue={tx}
-          onChange={(e) => setTx(e.target.value.trim())}
+          onChange={(e) => {
+            setTx(e.target.value.trim());
+            setDangerConfirmed(false);
+          }}
         />
+        {tx && (
+          <div className="max-h-80 space-y-2 overflow-y-auto">
+            {preview.isLoading && (
+              <p className="text-sm text-muted-foreground">Decoding message...</p>
+            )}
+            {preview.isError && (
+              <p className="text-sm text-red-500">
+                Unable to decode the message: {formatTransactionError(preview.error)}
+              </p>
+            )}
+            {preview.data?.instructions.map((ix, i) => (
+              <InstructionCard
+                key={i}
+                ix={ix}
+                label={`Instruction ${i + 1}`}
+                ctx={preview.data.ctx}
+              />
+            ))}
+          </div>
+        )}
+        {preview.data?.hasDanger && (
+          <label className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={dangerConfirmed}
+              onChange={(e) => setDangerConfirmed(e.target.checked)}
+            />
+            I have read the warnings above. I want to propose this transaction.
+          </label>
+        )}
         <div className="flex items-center justify-end gap-2">
           <Button
             onClick={() => {
@@ -112,6 +167,7 @@ const CreateTransaction = () => {
           </Button>
           {multisigAddress && (
             <Button
+              disabled={!preview.isSuccess || needsDangerConfirm}
               onClick={async () => {
                 try {
                   const signature = await importTransaction(

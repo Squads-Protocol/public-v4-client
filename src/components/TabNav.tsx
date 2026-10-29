@@ -1,4 +1,4 @@
-import { ArrowDownUp, LucideHome, Settings, Users, Box, createLucideIcon } from 'lucide-react';
+import { ArrowDownUp, LucideHome, Settings, Users, Box, Github, Server, createLucideIcon } from 'lucide-react';
 import ConnectWallet from '@/components/ConnectWalletButton';
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
@@ -24,6 +24,7 @@ export default function TabNav() {
     { name: 'Transactions', icon: <ArrowDownUp />, route: '/transactions/' },
     { name: 'Configuration', icon: <Users />, route: '/config/' },
     { name: 'Programs', icon: <Box />, route: '/programs/' },
+    { name: 'Validators', icon: <Server />, route: '/validators/' },
     { name: 'Settings', icon: <Settings />, route: '/settings/' },
   ];
 
@@ -92,7 +93,7 @@ export default function TabNav() {
         className="fixed inset-x-0 bottom-0 z-50 block bg-[#111318] border-t border-[#1e2028] p-2 md:hidden"
         aria-label="Mobile navbar"
       >
-        <div className="mx-auto mt-1 grid h-full max-w-lg grid-cols-5 font-medium">
+        <div className="mx-auto mt-1 grid h-full max-w-lg grid-cols-6 font-medium">
           {tabs.map((tab) => {
             const isActive =
               (path!.startsWith(`${tab.route}/`) && tab.route !== '/') ||

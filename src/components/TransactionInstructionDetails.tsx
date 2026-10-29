@@ -1,10 +1,12 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PublicKey } from '@solana/web3.js';
 import * as multisig from '@sqds/multisig';
 import bs58 from 'bs58';
+import type { ConfigAction } from '@sqds/multisig/lib/generated/types/ConfigAction';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { decodeTransaction, DecodedInstruction } from '@/lib/transaction/decodeTransactionMessage';
+import { loadDescribeContext, type DescribeContext } from '@/lib/transaction/describe';
+import { InstructionCard } from '@/components/InstructionCards';
 import { cn, renderPermissions } from '@/lib/utils';
 
 type ConfigAction = multisig.generated.ConfigAction;
@@ -19,13 +21,23 @@ export default function TransactionInstructionDetails({ transactionPda, proposal
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['txDetails', transactionPda],
-    queryFn: () =>
-      decodeTransaction(
+    queryFn: async () => {
+      const multisigPda = new PublicKey(multisigAddress!);
+      const decoded = await decodeTransaction(
         connection,
         new PublicKey(transactionPda),
-        new PublicKey(multisigAddress!),
+        multisigPda,
         programId
-      ),
+      );
+      const instructions =
+        decoded.kind === 'vault'
+          ? decoded.instructions
+          : decoded.kind === 'batch'
+            ? decoded.transactions.flat()
+            : [];
+      const ctx = await loadDescribeContext(connection, multisigPda, programId, instructions);
+      return { decoded, ctx };
+    },
     retry: false,
     enabled: !!multisigAddress,
   });
@@ -41,9 +53,12 @@ export default function TransactionInstructionDetails({ transactionPda, proposal
         </div>
       );
     }
-    if (data.kind === 'vault') return <VaultInstructions instructions={data.instructions} />;
-    if (data.kind === 'config') return <ConfigActions actions={data.actions} />;
-    return <BatchInstructions size={data.size} transactions={data.transactions} />;
+    const { decoded, ctx } = data;
+    if (decoded.kind === 'vault') {
+      return <VaultInstructions instructions={decoded.instructions} ctx={ctx} />;
+    }
+    if (decoded.kind === 'config') return <ConfigActions actions={decoded.actions} />;
+    return <BatchInstructions size={decoded.size} transactions={decoded.transactions} ctx={ctx} />;
   })();
 
   return (
@@ -122,14 +137,20 @@ function VoterList({
 
 // ── Instruction displays ──────────────────────────────────────────────────────
 
-function VaultInstructions({ instructions }: { instructions: DecodedInstruction[] }) {
+function VaultInstructions({
+  instructions,
+  ctx,
+}: {
+  instructions: DecodedInstruction[];
+  ctx: DescribeContext;
+}) {
   if (instructions.length === 0) {
     return <div className="p-4 text-sm text-muted-foreground">No instructions found.</div>;
   }
   return (
     <div className="p-4 space-y-3">
       {instructions.map((ix, i) => (
-        <InstructionCard key={i} ix={ix} label={`Instruction ${i + 1}`} />
+        <InstructionCard key={i} ix={ix} label={`Instruction ${i + 1}`} ctx={ctx} />
       ))}
     </div>
   );
@@ -138,9 +159,11 @@ function VaultInstructions({ instructions }: { instructions: DecodedInstruction[
 function BatchInstructions({
   size,
   transactions,
+  ctx,
 }: {
   size: number;
   transactions: DecodedInstruction[][];
+  ctx: DescribeContext;
 }) {
   return (
     <div className="p-4 space-y-4">
@@ -152,7 +175,7 @@ function BatchInstructions({
             <div className="text-xs text-muted-foreground">No instructions.</div>
           ) : (
             ixs.map((ix, i) => (
-              <InstructionCard key={i} ix={ix} label={`Instruction ${i + 1}`} />
+              <InstructionCard key={i} ix={ix} label={`Instruction ${i + 1}`} ctx={ctx} />
             ))
           )}
         </div>
@@ -161,83 +184,7 @@ function BatchInstructions({
   );
 }
 
-// ── Shared primitives ─────────────────────────────────────────────────────────
-
-const DATA_FORMATS = ['base64', 'base58', 'bytes'] as const;
-type DataFormat = (typeof DATA_FORMATS)[number];
-
-function DataField({ data }: { data: Uint8Array }) {
-  const [format, setFormat] = useState<DataFormat>('base64');
-
-  const encoded = (() => {
-    if (data.length === 0) return '(empty)';
-    if (format === 'base64') return Buffer.from(data).toString('base64');
-    if (format === 'base58') return bs58.encode(data);
-    return Array.from(data).join(', ');
-  })();
-
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">Data</span>
-        <div className="flex rounded border border-border overflow-hidden">
-          {DATA_FORMATS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFormat(f)}
-              className={cn(
-                'px-2 py-0.5 text-xs transition-colors',
-                format === f
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted text-muted-foreground'
-              )}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="font-mono break-all">{encoded}</div>
-    </div>
-  );
-}
-
-function InstructionCard({ ix, label }: { ix: DecodedInstruction; label: string }) {
-  return (
-    <div className="rounded border border-border bg-muted/30 p-3 space-y-2 text-xs">
-      <div className="font-medium text-sm">{label}</div>
-      <div className="space-y-1">
-        <span className="text-muted-foreground">Program ID</span>
-        <div className="font-mono break-all">{ix.programId}</div>
-      </div>
-      <DataField data={ix.data} />
-      {ix.accounts.length > 0 && (
-        <div className="space-y-1">
-          <span className="text-muted-foreground">Accounts</span>
-          <div className="space-y-1">
-            {ix.accounts.map((acc, j) => (
-              <div key={j} className="flex items-center gap-2 font-mono">
-                <span className="break-all">{acc.address}</span>
-                <div className="flex gap-1 shrink-0">
-                  {acc.isSigner && (
-                    <span className="rounded bg-yellow-500/20 px-1 text-yellow-600 dark:text-yellow-400">
-                      signer
-                    </span>
-                  )}
-                  {acc.isWritable && (
-                    <span className="rounded bg-blue-500/20 px-1 text-blue-600 dark:text-blue-400">
-                      writable
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+// ── Config actions ────────────────────────────────────────────────────────────
 
 function ConfigActions({ actions }: { actions: ConfigAction[] }) {
   if (actions.length === 0) {
