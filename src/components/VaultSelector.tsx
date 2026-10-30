@@ -8,6 +8,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '~/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { useVaultIndex } from '~/hooks/useVaultIndex';
@@ -45,20 +46,26 @@ export function VaultSelector() {
       <PopoverContent className="w-[200px] p-0">
         <Command>
           <CommandInput placeholder="Search Vault Index..." />
-          <CommandEmpty>No vault index found.</CommandEmpty>
-          <CommandGroup>
-            {vaultIndices.map((vaultIndex) => (
-              <CommandItem key={vaultIndex.value} value={vaultIndex.value} onSelect={handleSelect}>
-                <Check
-                  className={cn(
-                    'mr-2 h-4 w-4',
-                    selectedValue === vaultIndex.value ? 'opacity-100' : 'opacity-0'
-                  )}
-                />
-                {vaultIndex.label}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          <CommandList>
+            <CommandEmpty>No vault index found.</CommandEmpty>
+            <CommandGroup>
+              {vaultIndices.map((vaultIndex) => (
+                <CommandItem
+                  key={vaultIndex.value}
+                  value={vaultIndex.value}
+                  onSelect={handleSelect}
+                >
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4',
+                      selectedValue === vaultIndex.value ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                  {vaultIndex.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

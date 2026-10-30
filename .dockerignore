@@ -1,0 +1,9 @@
+# Dependencies come only from `yarn install --frozen-lockfile` inside the image.
+node_modules
+shim
+dist
+.git
+.github
+.claude
+.idea
+**/.DS_Store

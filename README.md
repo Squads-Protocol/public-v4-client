@@ -21,7 +21,7 @@ The following steps will guide you to build, verify, and host the application.
 ### 1. **Build the Web App**
 
 #### Prerequisites:
-- [Node.js v20+](https://nodejs.org/)
+- [Node.js v24+](https://nodejs.org/)
 - [Yarn](https://yarnpkg.com/)
 
 #### Steps:

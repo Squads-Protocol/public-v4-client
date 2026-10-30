@@ -12,7 +12,7 @@ The app is deployed as a static site (Hash Router) and emphasizes **verifiable/r
 
 | Layer | Library |
 |---|---|
-| Framework | React 19, TypeScript 5.8, React Router v7 (HashRouter) |
+| Framework | React 19, TypeScript 6.0, React Router v7 (HashRouter) |
 | Build | Webpack 5 (deterministic), ts-loader |
 | Styling | Tailwind CSS 3, Radix UI, Lucide icons, Sonner toasts |
 | State | `@tanstack/react-query` v5 (all server/blockchain state) |
