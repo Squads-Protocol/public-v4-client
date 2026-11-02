@@ -3,9 +3,15 @@ import {
   Connection,
   MessageV0,
   PublicKey,
+  TransactionInstruction,
   TransactionMessage,
+  VersionedMessage,
 } from '@solana/web3.js';
 import * as multisig from '@sqds/multisig';
+import bs58 from 'bs58';
+import { decodeAndDeserialize } from './decodeAndDeserialize';
+import { loadLookupTables } from './getAccountsForSimulation';
+
 type VaultTransactionMessage = multisig.generated.VaultTransactionMessage;
 type ConfigAction = multisig.generated.ConfigAction;
 
@@ -64,15 +70,9 @@ async function resolveAlts(
   return results.filter((item): item is AddressLookupTableAccount => item !== null);
 }
 
-async function decodeMessage(
-  connection: Connection,
-  msg: VaultTransactionMessage
-): Promise<DecodedInstruction[]> {
-  const alts = await resolveAlts(connection, msg.addressTableLookups);
-  const messageV0 = buildMessageV0(msg);
-  const ixs = TransactionMessage.decompile(messageV0, {
-    addressLookupTableAccounts: alts,
-  }).instructions;
+export function toDecodedInstructions(
+  ixs: readonly TransactionInstruction[]
+): DecodedInstruction[] {
   return ixs.map((ix) => ({
     programId: ix.programId.toBase58(),
     accounts: ix.keys.map((k) => ({
@@ -82,6 +82,34 @@ async function decodeMessage(
     })),
     data: ix.data,
   }));
+}
+
+async function decodeMessage(
+  connection: Connection,
+  msg: VaultTransactionMessage
+): Promise<DecodedInstruction[]> {
+  const alts = await resolveAlts(connection, msg.addressTableLookups);
+  const messageV0 = buildMessageV0(msg);
+  const ixs = TransactionMessage.decompile(messageV0, {
+    addressLookupTableAccounts: alts,
+  }).instructions;
+  return toDecodedInstructions(ixs);
+}
+
+/** Decodes a base58 transaction message (legacy or v0, lookup tables resolved) for preview. */
+export async function decodeEncodedMessage(
+  connection: Connection,
+  tx: string
+): Promise<DecodedInstruction[]> {
+  const bytes = bs58.decode(tx);
+  if (VersionedMessage.deserializeMessageVersion(bytes) === 'legacy') {
+    return toDecodedInstructions(decodeAndDeserialize(tx).message.instructions);
+  }
+  const message = VersionedMessage.deserialize(bytes);
+  const alts = await loadLookupTables(connection, message);
+  return toDecodedInstructions(
+    TransactionMessage.decompile(message, { addressLookupTableAccounts: alts }).instructions
+  );
 }
 
 export async function decodeTransaction(
