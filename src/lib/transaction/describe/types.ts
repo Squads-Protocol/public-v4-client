@@ -29,6 +29,7 @@ export type ControlRole =
   | 'vote-withdrawer'
   | 'stake-staker'
   | 'stake-withdrawer'
+  | 'vote-commission-collector'
   | 'program-upgrade-authority';
 
 export interface AuthorityChange {
@@ -51,8 +52,22 @@ export interface DecodedCall {
   readonly accounts: readonly AccountRole[];
   readonly authorityChanges?: readonly AuthorityChange[];
   readonly voteWithdrawal?: VoteWithdrawal;
+  readonly accountTakeover?: AccountTakeover;
   readonly notes?: readonly InstructionWarning[];
 }
+
+/**
+ * The instruction gives a System account a new owner program (Assign), or data (Allocate).
+ * After either one, the System program can no longer transfer the SOL of that account.
+ */
+export interface AccountTakeover {
+  readonly account: string;
+  /** null when only data is allocated and the owner stays the System program. */
+  readonly newOwner: string | null;
+}
+
+/** State of an account of the BPF Upgradeable Loader, from its first 4 bytes. */
+export type LoaderAccountKind = 'buffer' | 'program-data';
 
 /** Returns null when the tag is unknown or the data is malformed. */
 export type ProgramDecoder = (ix: DecodedInstruction) => DecodedCall | null;
@@ -62,6 +77,10 @@ export interface DescribeContext {
   readonly vaultIndexByAddress: ReadonlyMap<string, number>;
   /** Known account balances (base58 -> lamports), used to detect a vote account close. */
   readonly accountLamports: ReadonlyMap<string, bigint>;
+  /** Sum of all vote Withdraw amounts per vote account, over every instruction described. */
+  readonly voteWithdrawalTotals: ReadonlyMap<string, bigint>;
+  /** Kind of each loader account that a Set Authority instruction changes, when known. */
+  readonly loaderAccountKinds: ReadonlyMap<string, LoaderAccountKind>;
 }
 
 export type InstructionDescription =

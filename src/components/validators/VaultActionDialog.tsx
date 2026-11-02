@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
@@ -119,7 +119,14 @@ export function VaultActionDialog({
   const navigate = useNavigate();
   const { connection, multisigAddress, programId } = useMultisigData();
 
+  /**
+   * Increments on each preview request and on each form change. A preview whose request is
+   * not the latest was built from old form values, so it is dropped.
+   */
+  const previewRequest = useRef(0);
+
   useEffect(() => {
+    previewRequest.current += 1;
     setPreview(null);
     setPreviewError(null);
     setConfirmText('');
@@ -132,6 +139,8 @@ export function VaultActionDialog({
       return;
     }
     if (!multisigAddress) return;
+    const request = ++previewRequest.current;
+    const isCurrent = () => request === previewRequest.current;
     setBusy(true);
     setPreviewError(null);
     try {
@@ -145,6 +154,7 @@ export function VaultActionDialog({
           (e): SimulationResult => ({ ok: false, error: formatTransactionError(e), logs: [] })
         ),
       ]);
+      if (!isCurrent()) return;
       setPreview({
         prepared: { ...proposal, transactionIndex },
         instructions,
@@ -153,8 +163,9 @@ export function VaultActionDialog({
         hasDanger: hasDangerWarning(instructions, ctx),
       });
     } catch (e) {
-      setPreviewError(formatTransactionError(e));
+      if (isCurrent()) setPreviewError(formatTransactionError(e));
     } finally {
+      // The Preview button is disabled while busy, so no newer request runs at this time.
       setBusy(false);
     }
   };
@@ -204,7 +215,10 @@ export function VaultActionDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 text-sm">{children}</div>
+        {/* Locks the form while a preview or a proposal runs, so the form cannot change under it. */}
+        <fieldset disabled={busy} className="min-w-0 space-y-3 text-sm">
+          {children}
+        </fieldset>
         {formError && <p className="text-sm text-red-500">{formError}</p>}
 
         <div className="flex justify-end">

@@ -22,7 +22,10 @@ const callOf =
 
 const loaderCall = callOf('BPF Upgradeable Loader');
 
-/** SetAuthority on a ProgramData account changes the upgrade authority; on a buffer it does not. */
+/**
+ * Account 0 is a ProgramData account (upgrade authority) or a buffer (buffer authority).
+ * The bytes do not tell which. `describeInstruction` uses `ctx.loaderAccountKinds` for that.
+ */
 function upgradeAuthorityChange(ix: DecodedInstruction, newAuthority: string | null) {
   const account = accountAt(ix, 0);
   return account ? [{ role: 'program-upgrade-authority' as const, account, newAuthority }] : [];
@@ -83,8 +86,26 @@ const loaderDecoders: Record<number, (ix: DecodedInstruction, r: ByteReader) => 
       { authorityChanges: upgradeAuthorityChange(ix, newAuthority) }
     );
   },
-  5: (ix) =>
-    loaderCall(ix, 'Close', ['Account to close', 'Recipient', 'Authority', 'Program account']),
+  5: (ix) => {
+    // The program account is present only when the closed account is a ProgramData account.
+    const program = accountAt(ix, 3);
+    return loaderCall(
+      ix,
+      'Close',
+      ['Account to close', 'Recipient', 'Authority', 'Program account'],
+      program ? [address('Program closed', program)] : [],
+      program
+        ? {
+            notes: [
+              {
+                severity: 'danger',
+                message: `Closes program ${program}. It stops working, and no program can be deployed at this address again.`,
+              },
+            ],
+          }
+        : {}
+    );
+  },
   6: (ix, r) =>
     loaderCall(
       ix,

@@ -194,12 +194,21 @@ const decoders: Record<number, (ix: DecodedInstruction, r: ByteReader) => Decode
   },
   17: (ix, r) => {
     const kind = readCommissionKind(r);
-    const collector = accountAt(ix, 1);
+    const [voteAccount, collector] = [accountAt(ix, 0), accountAt(ix, 1)];
+    // A collector that is the vote account keeps the commission under the withdrawer's control.
+    const redirects = !!voteAccount && !!collector && collector !== voteAccount;
     return call(
       ix,
       `Update ${kind} Collector`,
       ['Vote account', 'New collector', 'Withdraw authority'],
-      [text('Commission kind', kind), ...(collector ? [address('New collector', collector)] : [])]
+      [text('Commission kind', kind), ...(collector ? [address('New collector', collector)] : [])],
+      redirects
+        ? {
+            authorityChanges: [
+              { role: 'vote-commission-collector', account: voteAccount, newAuthority: collector },
+            ],
+          }
+        : {}
     );
   },
   18: (ix, r) => {

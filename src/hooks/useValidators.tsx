@@ -44,9 +44,14 @@ export const useTrackedVoteAccounts = () => {
     queryFn: () => Promise.resolve(readTracked(multisigAddress)),
   });
 
+  /**
+   * Takes an updater, not a list: a slow action (for example a getProgramAccounts search) must
+   * apply its change to the list as stored now, not to the list of the render where it started.
+   */
   const setTracked = useMutation({
-    mutationFn: (next: string[]) => {
+    mutationFn: (update: (current: readonly string[]) => string[]) => {
       if (!multisigAddress) throw new Error('No multisig selected');
+      const next = update(readTracked(multisigAddress));
       localStorage.setItem(storageKey(multisigAddress), JSON.stringify(next));
       return Promise.resolve(next);
     },
@@ -56,8 +61,9 @@ export const useTrackedVoteAccounts = () => {
   return {
     voteAccounts,
     add: (addresses: readonly string[]) =>
-      setTracked.mutateAsync([...new Set([...voteAccounts, ...addresses])]),
-    remove: (address: string) => setTracked.mutateAsync(voteAccounts.filter((a) => a !== address)),
+      setTracked.mutateAsync((current) => [...new Set([...current, ...addresses])]),
+    remove: (address: string) =>
+      setTracked.mutateAsync((current) => current.filter((a) => a !== address)),
   };
 };
 

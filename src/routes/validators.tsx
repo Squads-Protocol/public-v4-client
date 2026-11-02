@@ -14,7 +14,11 @@ import {
   findVoteAccountsByWithdrawer,
   useTrackedVoteAccounts,
 } from '@/hooks/useValidators';
-import { getVaultIndexByAddress, type DescribeContext } from '@/lib/transaction/describe';
+import {
+  getVaultIndexByAddress,
+  staticDescribeContext,
+  type DescribeContext,
+} from '@/lib/transaction/describe';
 import { isPublickey } from '@/lib/isPublickey';
 import { formatTransactionError } from '@/lib/utils';
 
@@ -25,10 +29,9 @@ const ValidatorsContent = ({ multisigAddress }: { multisigAddress: string }) => 
   const [inputError, setInputError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
 
-  const dctx: DescribeContext = {
-    vaultIndexByAddress: getVaultIndexByAddress(new PublicKey(multisigAddress), programId),
-    accountLamports: new Map(),
-  };
+  const dctx: DescribeContext = staticDescribeContext(
+    getVaultIndexByAddress(new PublicKey(multisigAddress), programId)
+  );
 
   const addVoteAccount = async () => {
     setInputError(null);

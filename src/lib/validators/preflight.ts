@@ -1,4 +1,5 @@
 import { SystemProgram, type AccountInfo } from '@solana/web3.js';
+import { formatSol } from '../transaction/describe/fields';
 import {
   estimateStakeStatus,
   isLockupInForce,
@@ -63,6 +64,24 @@ export function stakeWithdrawable({ lamports, state, currentEpoch }: StakeContex
   return lamports > locked ? lamports - locked : BigInt(0);
 }
 
+/**
+ * The Stake program accepts the full balance (which closes the account), or an amount that
+ * leaves at least the rent-exempt reserve. Any amount between the two fails.
+ */
+export function stakeWithdrawAmountCheck(ctx: StakeContext, amount: bigint): Check {
+  const withdrawable = stakeWithdrawable(ctx);
+  if (amount > withdrawable) {
+    return fail(`The amount is more than the withdrawable balance (${formatSol(withdrawable)}).`);
+  }
+  if (amount === ctx.lamports) return pass;
+  const reserve = ctx.state.rentExemptReserve;
+  const partialMax = ctx.lamports > reserve ? ctx.lamports - reserve : BigInt(0);
+  if (amount <= partialMax) return pass;
+  return fail(
+    `Withdraw everything (${formatSol(ctx.lamports)}) to close the account, or at most ${formatSol(partialMax)} to leave the rent-exempt reserve.`
+  );
+}
+
 export function lockupCheck(
   { state, currentEpoch, nowUnixSeconds }: StakeContext,
   vault: string
@@ -79,11 +98,16 @@ type MergeKind = 'inactive' | 'activating' | 'active' | 'deactivating';
 const mergeKind = (status: StakeStatus): MergeKind =>
   status === 'initialized' ? 'inactive' : status;
 
-/** Mirrors the Stake program merge rules, from the estimated status. */
+export interface ClockEstimate {
+  readonly currentEpoch: bigint;
+  readonly nowUnixSeconds: bigint;
+}
+
+/** Mirrors the Stake program merge rules (`metas_can_merge`, `MergeKind`), from the estimated status. */
 export function mergeCheck(
   destination: StakeAccountState,
   source: StakeAccountState,
-  currentEpoch: bigint
+  { currentEpoch, nowUnixSeconds }: ClockEstimate
 ): Check {
   if (destination.staker !== source.staker || destination.withdrawer !== source.withdrawer) {
     return fail('Both stake accounts must have the same staker and withdrawer.');
@@ -92,7 +116,12 @@ export function mergeCheck(
     destination.lockup.epoch === source.lockup.epoch &&
     destination.lockup.unixTimestamp === source.lockup.unixTimestamp &&
     destination.lockup.custodian === source.lockup.custodian;
-  if (!sameLockup) return fail('Both stake accounts must have the same lockup.');
+  // The program ignores the custodian here: it checks `is_in_force(clock, None)`.
+  const inForce = (state: StakeAccountState) =>
+    isLockupInForce(state.lockup, currentEpoch, nowUnixSeconds);
+  if (!sameLockup && (inForce(destination) || inForce(source))) {
+    return fail('The lockups are different, and at least one is still in force.');
+  }
 
   const [d, s] = [destination, source].map((a) => mergeKind(estimateStakeStatus(a, currentEpoch)));
   const sameVote = destination.delegation?.voteAccount === source.delegation?.voteAccount;

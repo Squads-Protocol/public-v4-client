@@ -20,7 +20,9 @@ import type {
   DescribeContext,
   InstructionDescription,
   InstructionWarning,
+  LoaderAccountKind,
   ProgramDecoder,
+  WarningSeverity,
 } from './types';
 
 export type * from './types';
@@ -54,19 +56,38 @@ const ROLE_LABELS: Record<ControlRole, string> = {
   'vote-withdrawer': 'authorized withdrawer (Vote program role)',
   'stake-staker': 'staker (Stake program role)',
   'stake-withdrawer': 'withdrawer (Stake program role)',
+  'vote-commission-collector': 'commission collector (Vote program role)',
   'program-upgrade-authority': 'program upgrade authority',
 };
+
+const LOADER_LABELS: Record<LoaderAccountKind | 'unknown', string> = {
+  'program-data': 'program upgrade authority',
+  buffer: 'buffer authority',
+  unknown: 'upgrade authority (program data) or buffer authority',
+};
+
+/** A buffer authority does not control a deployed program, so moving it is a caution only. */
+function roleOf(
+  change: AuthorityChange,
+  ctx: DescribeContext
+): { label: string; severity: WarningSeverity } {
+  if (change.role !== 'program-upgrade-authority') {
+    return { label: ROLE_LABELS[change.role], severity: 'danger' };
+  }
+  const kind = ctx.loaderAccountKinds.get(change.account) ?? 'unknown';
+  return { label: LOADER_LABELS[kind], severity: kind === 'buffer' ? 'caution' : 'danger' };
+}
 
 function authorityWarnings(
   changes: readonly AuthorityChange[],
   ctx: DescribeContext
 ): InstructionWarning[] {
   return changes.flatMap((change): InstructionWarning[] => {
-    const label = ROLE_LABELS[change.role];
+    const { label, severity } = roleOf(change, ctx);
     if (change.newAuthority === null) {
       return [
         {
-          severity: 'danger',
+          severity,
           message: `Removes the ${label} of ${change.account}. No one can change it after this.`,
         },
       ];
@@ -75,22 +96,43 @@ function authorityWarnings(
     if (vaultIndex !== undefined) return [];
     return [
       {
-        severity: 'danger',
+        severity,
         message: `Moves the ${label} of ${change.account} away from the vaults of this multisig, to ${change.newAuthority}.`,
       },
     ];
   });
 }
 
+/** Compares the sum of all withdrawals from the vote account in this proposal with its balance. */
 function voteCloseWarnings(decoded: DecodedCall, ctx: DescribeContext): InstructionWarning[] {
   const withdrawal = decoded.voteWithdrawal;
   if (!withdrawal) return [];
   const balance = ctx.accountLamports.get(withdrawal.voteAccount);
-  if (balance === undefined || withdrawal.lamports < balance) return [];
+  const total = ctx.voteWithdrawalTotals.get(withdrawal.voteAccount) ?? withdrawal.lamports;
+  if (balance === undefined || total < balance) return [];
   return [
     {
       severity: 'danger',
-      message: `Withdraws the full balance (${formatSol(balance)}). This closes the vote account.`,
+      message:
+        total > withdrawal.lamports
+          ? `The withdrawals from this vote account in this proposal total ${formatSol(total)}, the full balance (${formatSol(balance)}). Together they close the vote account.`
+          : `Withdraws the full balance (${formatSol(balance)}). This closes the vote account.`,
+    },
+  ];
+}
+
+function takeoverWarnings(decoded: DecodedCall, ctx: DescribeContext): InstructionWarning[] {
+  const takeover = decoded.accountTakeover;
+  if (!takeover) return [];
+  const vaultIndex = ctx.vaultIndexByAddress.get(takeover.account);
+  if (vaultIndex === undefined) return [];
+  const vault = `vault ${vaultIndex} (${takeover.account})`;
+  return [
+    {
+      severity: 'danger',
+      message: takeover.newOwner
+        ? `Gives ownership of ${vault} to program ${takeover.newOwner}. That program then controls the SOL of the vault, and the System program can no longer transfer it.`
+        : `Puts data in ${vault}. The System program can no longer transfer the SOL of the vault.`,
     },
   ];
 }
@@ -110,6 +152,7 @@ export function describeInstruction(
     warnings: [
       ...authorityWarnings(decoded.authorityChanges ?? [], ctx),
       ...voteCloseWarnings(decoded, ctx),
+      ...takeoverWarnings(decoded, ctx),
       ...(decoded.notes ?? []),
     ],
   };
@@ -146,32 +189,91 @@ export function getVaultIndexByAddress(
   return map;
 }
 
-/** Builds the context: vault PDAs, plus the balance of each vote account that a Withdraw reads. */
+/** A context without RPC data, for descriptions built before any proposal exists. */
+export const staticDescribeContext = (
+  vaultIndexByAddress: ReadonlyMap<string, number>
+): DescribeContext => ({
+  vaultIndexByAddress,
+  accountLamports: new Map(),
+  voteWithdrawalTotals: new Map(),
+  loaderAccountKinds: new Map(),
+});
+
+const LOADER_SET_AUTHORITY_TAGS: ReadonlySet<number> = new Set([4, 7]);
+const LOADER_STATE_TAGS: ReadonlyMap<number, LoaderAccountKind> = new Map([
+  [1, 'buffer'],
+  [3, 'program-data'],
+]);
+
+const u32At = (data: Uint8Array, offset: number): number | null =>
+  data.length >= offset + 4
+    ? new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(offset, true)
+    : null;
+
+function sumVoteWithdrawals(instructions: readonly DecodedInstruction[]): Map<string, bigint> {
+  return instructions
+    .filter((ix) => ix.programId === VOTE_PROGRAM_ID)
+    .map((ix) => decodeVoteInstruction(ix)?.voteWithdrawal)
+    .reduce((totals, w) => {
+      if (!w) return totals;
+      return new Map(totals).set(
+        w.voteAccount,
+        (totals.get(w.voteAccount) ?? BigInt(0)) + w.lamports
+      );
+    }, new Map<string, bigint>());
+}
+
+const loaderSetAuthorityTargets = (instructions: readonly DecodedInstruction[]): string[] =>
+  instructions
+    .filter(
+      (ix) =>
+        ix.programId === BPF_UPGRADEABLE_LOADER_ID &&
+        LOADER_SET_AUTHORITY_TAGS.has(u32At(ix.data, 0) ?? -1)
+    )
+    .map((ix) => ix.accounts[0]?.address)
+    .filter((account): account is string => !!account);
+
+/**
+ * Builds the context: vault PDAs, the balance of each vote account that a Withdraw reads, the
+ * withdrawal totals, and the kind of each loader account that a Set Authority changes.
+ * An RPC failure leaves the balances and kinds unknown; the descriptions then stay conservative.
+ */
 export async function loadDescribeContext(
   connection: Connection,
   multisigPda: PublicKey,
   programId: PublicKey,
   instructions: readonly DecodedInstruction[]
 ): Promise<DescribeContext> {
-  const voteAccounts = [
-    ...new Set(
-      instructions
-        .filter((ix) => ix.programId === VOTE_PROGRAM_ID)
-        .map((ix) => decodeVoteInstruction(ix)?.voteWithdrawal?.voteAccount)
-        .filter((account): account is string => !!account)
-    ),
-  ];
+  const voteWithdrawalTotals = sumVoteWithdrawals(instructions);
+  const voteAccounts = [...voteWithdrawalTotals.keys()];
+  const loaderAccounts = loaderSetAuthorityTargets(instructions);
+  const addresses = [...new Set([...voteAccounts, ...loaderAccounts])];
   const infos =
-    voteAccounts.length > 0
+    addresses.length > 0
       ? await connection
-          .getMultipleAccountsInfo(voteAccounts.map((a) => new PublicKey(a)))
+          .getMultipleAccountsInfo(addresses.map((a) => new PublicKey(a)))
           .catch(() => [])
       : [];
+  const infoOf = new Map(addresses.map((address, i) => [address, infos[i] ?? null]));
+
   const accountLamports = new Map(
-    voteAccounts.flatMap((account, i) => {
-      const info = infos[i];
+    voteAccounts.flatMap((account) => {
+      const info = infoOf.get(account);
       return info ? [[account, BigInt(info.lamports)] as const] : [];
     })
   );
-  return { vaultIndexByAddress: getVaultIndexByAddress(multisigPda, programId), accountLamports };
+  const loaderAccountKinds = new Map(
+    loaderAccounts.flatMap((account) => {
+      const info = infoOf.get(account);
+      if (!info || info.owner.toBase58() !== BPF_UPGRADEABLE_LOADER_ID) return [];
+      const kind = LOADER_STATE_TAGS.get(u32At(info.data, 0) ?? -1);
+      return kind ? [[account, kind] as const] : [];
+    })
+  );
+  return {
+    vaultIndexByAddress: getVaultIndexByAddress(multisigPda, programId),
+    accountLamports,
+    voteWithdrawalTotals,
+    loaderAccountKinds,
+  };
 }

@@ -29,6 +29,7 @@ import {
   lockupCheck,
   mergeCheck,
   requireAuthority,
+  stakeWithdrawAmountCheck,
   stakeWithdrawable,
   type Check,
   type StakeContext,
@@ -253,18 +254,20 @@ function WithdrawStakeAction({ env, account, ctx }: RowActionProps & { ctx: Stak
   const withdrawable = stakeWithdrawable(ctx);
   const lamports = parseSol(amount);
 
+  const amountCheck = lamports ? stakeWithdrawAmountCheck(ctx, lamports) : null;
+
   const formError = !isPublickey(recipient)
     ? 'Enter a valid recipient address.'
     : !lamports || lamports <= BigInt(0)
       ? 'Enter an amount in SOL.'
-      : lamports > withdrawable
-        ? `The amount is more than the withdrawable balance (${formatSol(withdrawable)}).`
+      : amountCheck && !amountCheck.ok
+        ? amountCheck.reason
         : null;
 
   return (
     <VaultActionDialog
       title="Withdraw from stake account"
-      description="Withdraw SOL. An inactive account can withdraw everything, which closes it. An active account can withdraw only the SOL above its stake and reserve."
+      description="Withdraw SOL. An inactive account can withdraw everything, which closes it, or an amount that leaves the rent-exempt reserve. An active account can withdraw only the SOL above its stake and reserve."
       triggerLabel="Withdraw"
       formKey={`${amount}|${recipient}`}
       formError={formError}
@@ -277,10 +280,9 @@ function WithdrawStakeAction({ env, account, ctx }: RowActionProps & { ctx: Stak
             lockupCheck(fresh, vault)
           )
         );
-        if (lamports! > stakeWithdrawable(fresh)) {
-          throw new Error(
-            'The stake account changed. The amount is now more than the withdrawable balance.'
-          );
+        const freshAmountCheck = stakeWithdrawAmountCheck(fresh, lamports!);
+        if (!freshAmountCheck.ok) {
+          throw new Error(`The stake account changed. ${freshAmountCheck.reason}`);
         }
         const lockupActive = isLockupInForce(
           fresh.state.lockup,
@@ -389,7 +391,7 @@ function MergeAction({
         assertCheck(
           firstFailure(
             requireAuthority(STAKER_ROLE, destination.state.staker, env.vault.toBase58()),
-            mergeCheck(destination.state, src.state, destination.currentEpoch)
+            mergeCheck(destination.state, src.state, destination)
           )
         );
         return {
@@ -580,7 +582,7 @@ export function StakeAccountsPanel({
   const { connection, vaultIndex, multisigVault } = useMultisigData();
   const queryClient = useQueryClient();
   const { data: accounts, isLoading, error } = useVaultStakeAccounts(multisigVault);
-  const { data: epoch } = useEpoch();
+  const { data: epoch, isLoading: epochLoading, error: epochError } = useEpoch();
 
   if (!multisigVault) return null;
   const env: Env = { connection, vaultIndex, vault: multisigVault };
@@ -592,12 +594,26 @@ export function StakeAccountsPanel({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['vaultStakeAccounts'] })}
+          onClick={() =>
+            Promise.all(
+              ['vaultStakeAccounts', 'epochInfo'].map((key) =>
+                queryClient.invalidateQueries({ queryKey: [key] })
+              )
+            )
+          }
         >
           Refresh
         </Button>
       </div>
-      {isLoading && <p className="text-sm text-muted-foreground">Loading stake accounts...</p>}
+      {(isLoading || (accounts && epochLoading)) && (
+        <p className="text-sm text-muted-foreground">Loading stake accounts...</p>
+      )}
+      {accounts && accounts.length > 0 && epochError && (
+        <p className="text-sm text-red-500">
+          Unable to load the current epoch from your RPC. The stake accounts cannot be shown without
+          it.
+        </p>
+      )}
       {error && (
         <p className="text-sm text-red-500">
           Unable to load stake accounts. Your RPC must allow getProgramAccounts on the Stake

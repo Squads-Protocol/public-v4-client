@@ -17,6 +17,7 @@ import {
   formatSol,
   getVaultIndexByAddress,
   parseSol,
+  staticDescribeContext,
   toSolString,
   type DescribeContext,
 } from '@/lib/transaction/describe';
@@ -339,7 +340,7 @@ export function VoteAccountPanel({
   const vaultIndexByAddress = multisigAddress
     ? getVaultIndexByAddress(new PublicKey(multisigAddress), programId)
     : new Map<string, number>();
-  const ctx: DescribeContext = { vaultIndexByAddress, accountLamports: new Map() };
+  const ctx: DescribeContext = staticDescribeContext(vaultIndexByAddress);
 
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-2">
