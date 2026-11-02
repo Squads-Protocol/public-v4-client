@@ -1,4 +1,4 @@
-import { ArrowDownUp, LucideHome, Settings, Users, Box, Github, Server, createLucideIcon } from 'lucide-react';
+import { ArrowDownUp, LucideHome, Settings, Users, Box, Server, createLucideIcon } from 'lucide-react';
 import ConnectWallet from '@/components/ConnectWalletButton';
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
