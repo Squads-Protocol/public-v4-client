@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { PublicKey } from '@solana/web3.js';
 import * as multisig from '@sqds/multisig';
 import bs58 from 'bs58';
-import type { ConfigAction } from '@sqds/multisig/lib/generated/types/ConfigAction';
 import { useMultisigData } from '@/hooks/useMultisigData';
 import { decodeTransaction, DecodedInstruction } from '@/lib/transaction/decodeTransactionMessage';
 import { cn, renderPermissions } from '@/lib/utils';
+
+type ConfigAction = multisig.generated.ConfigAction;
 
 interface Props {
   transactionPda: string;

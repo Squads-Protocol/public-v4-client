@@ -6,8 +6,8 @@ import {
   TransactionMessage,
 } from '@solana/web3.js';
 import * as multisig from '@sqds/multisig';
-import type { VaultTransactionMessage } from '@sqds/multisig/lib/generated/types/VaultTransactionMessage';
-import type { ConfigAction } from '@sqds/multisig/lib/generated/types/ConfigAction';
+type VaultTransactionMessage = multisig.generated.VaultTransactionMessage;
+type ConfigAction = multisig.generated.ConfigAction;
 
 export interface DecodedInstruction {
   programId: string;

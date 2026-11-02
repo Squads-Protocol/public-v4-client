@@ -1,10 +1,10 @@
 # Use a minimal base image
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Enable Yarn (since corepack is built-in with Node.js 20)
+# Enable Yarn (corepack is built-in with Node.js 24)
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 # Ensure consistent timestamps for deterministic builds
