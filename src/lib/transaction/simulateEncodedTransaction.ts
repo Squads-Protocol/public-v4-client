@@ -14,11 +14,15 @@ export const simulateEncodedTransaction = async (
     throw 'Please connect your wallet.';
   }
   try {
-    const { message, version } = decodeAndDeserialize(tx);
+    const { message, addressLookupTableAccounts } = await decodeAndDeserialize(tx, connection);
 
-    const transaction = new VersionedTransaction(message.compileToV0Message());
+    // Recompile with the tables the message arrived with, or inlining every address can push the
+    // transaction past the packet size limit.
+    const transaction = new VersionedTransaction(
+      message.compileToV0Message(addressLookupTableAccounts)
+    );
 
-    const keys = await getAccountsForSimulation(connection, transaction, version === 0);
+    const keys = getAccountsForSimulation(transaction, addressLookupTableAccounts);
 
     toast.loading('Simulating...', {
       id: 'simulation',

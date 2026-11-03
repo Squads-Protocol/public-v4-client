@@ -2,42 +2,31 @@
 import {
   AddressLookupTableAccount,
   Connection,
-  Message,
   SystemProgram,
   VersionedMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
 
-export async function getAccountsForSimulation(
-  connection: Connection,
+export function getAccountsForSimulation(
   tx: VersionedTransaction,
-  isLegacy: boolean
-): Promise<string[]> {
-  if (isLegacy) {
-    return (tx.message as Message)
-      .nonProgramIds()
-      .map((pubkey) => pubkey.toString())
-      .filter((address) => address !== SystemProgram.programId.toBase58());
-  } else {
-    const addressLookupTableAccounts = await loadLookupTables(connection, tx.message);
+  addressLookupTableAccounts: AddressLookupTableAccount[]
+): string[] {
+  const { staticAccountKeys, accountKeysFromLookups } = tx.message.getAccountKeys({
+    addressLookupTableAccounts,
+  });
 
-    const { staticAccountKeys, accountKeysFromLookups } = tx.message.getAccountKeys({
-      addressLookupTableAccounts,
-    });
+  const staticAddresses = staticAccountKeys.reduce((acc, k) => {
+    if (!k.equals(SystemProgram.programId)) {
+      acc.push(k.toString());
+    }
+    return acc;
+  }, [] as string[]);
 
-    const staticAddresses = staticAccountKeys.reduce((acc, k) => {
-      if (!k.equals(SystemProgram.programId)) {
-        acc.push(k.toString());
-      }
-      return acc;
-    }, [] as string[]);
+  const addressesFromLookups = accountKeysFromLookups
+    ? accountKeysFromLookups.writable.map((k) => k.toString())
+    : [];
 
-    const addressesFromLookups = accountKeysFromLookups
-      ? accountKeysFromLookups.writable.map((k) => k.toString())
-      : [];
-
-    return [...new Set([...staticAddresses, ...addressesFromLookups])];
-  }
+  return [...new Set([...staticAddresses, ...addressesFromLookups])];
 }
 
 export async function loadLookupTables(
