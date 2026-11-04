@@ -11,16 +11,14 @@ const SetRpcUrlInput = ({ onUpdate }: { onUpdate?: () => void }) => {
   const [rpcUrl, setRpcUrlState] = useState(storedRpcUrl || '');
 
   const isValidUrl = (url: string) => {
-    const urlPattern = new RegExp(
-      '^(https?:\\/\\/)?' + // validate protocol
-        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-        '(\\#[-a-z\\d_]*)?$',
-      'i'
-    );
-    return !!urlPattern.test(url);
+    try {
+      const parsedUrl = new URL(url);
+      // Connection requires a lowercase http: or https: scheme.
+      // Fetch requests cannot use URLs with embedded credentials.
+      return /^https?:/.test(url) && !parsedUrl.username && !parsedUrl.password;
+    } catch {
+      return false;
+    }
   };
 
   const onSubmit = async () => {
