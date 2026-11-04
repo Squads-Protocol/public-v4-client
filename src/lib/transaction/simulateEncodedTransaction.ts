@@ -14,11 +14,11 @@ export const simulateEncodedTransaction = async (
     throw 'Please connect your wallet.';
   }
   try {
-    const { message, version } = decodeAndDeserialize(tx);
+    const { message } = decodeAndDeserialize(tx);
 
     const transaction = new VersionedTransaction(message.compileToV0Message());
 
-    const keys = await getAccountsForSimulation(connection, transaction, version === 0);
+    const keys = await getAccountsForSimulation(connection, transaction, false);
 
     toast.loading('Simulating...', {
       id: 'simulation',
