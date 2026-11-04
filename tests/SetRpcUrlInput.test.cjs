@@ -80,6 +80,9 @@ const invalidEndpoints = [
   'HTTP://localhost:8899',
   'http://[::1',
   'https://user:password@rpc.example.com:443/path',
+  'http:localhost:8899',
+  'https:/rpc.example.com',
+  'https:rpc.example.com',
 ];
 
 for (const endpoint of invalidEndpoints) {

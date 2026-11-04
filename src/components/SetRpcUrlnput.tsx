@@ -13,9 +13,9 @@ const SetRpcUrlInput = ({ onUpdate }: { onUpdate?: () => void }) => {
   const isValidUrl = (url: string) => {
     try {
       const parsedUrl = new URL(url);
-      // Connection requires a lowercase http: or https: scheme.
+      // Connection requires a lowercase http:// or https:// prefix.
       // Fetch requests cannot use URLs with embedded credentials.
-      return /^https?:/.test(url) && !parsedUrl.username && !parsedUrl.password;
+      return /^https?:\/\//.test(url) && !parsedUrl.username && !parsedUrl.password;
     } catch {
       return false;
     }
